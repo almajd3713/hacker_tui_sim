@@ -1,0 +1,13 @@
+[project]
+name = "hatui"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+hatui = "hatui.app:main"
+
+[tool.uv]
+package = true

@@ -1,0 +1,6 @@
+# Python-based stuff
+*.pyc
+.venv
+build/
+dist/
+*.egg-info
