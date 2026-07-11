@@ -58,7 +58,7 @@ class InputManager:
             modifiers.append("shift")
         return raw.lower(), modifiers
 
-    def poll_input(self, timeout: float = 0.05) -> None:
+    def poll_input(self, timeout: float = 0.05) -> tuple[str, list] | None:
         """
         Polls stdin for a single character without blocking indefinitely.
         Returns the character if available, or None if the timeout is reached.
@@ -66,7 +66,7 @@ class InputManager:
         fd = sys.stdin.fileno()
         ready, _, _ = select.select([fd], [], [], timeout)
         if not ready:
-            return
+            return None
 
         first = os.read(fd, 1).decode(errors="ignore")
         raw = first
@@ -74,3 +74,4 @@ class InputManager:
             raw += self._read_ready_chars(fd, 0.02, settle_timeout=0.005)
         key, modifiers = self._parse_key(raw)
         self.emit_event("keypress", key, modifiers)
+        return key, modifiers

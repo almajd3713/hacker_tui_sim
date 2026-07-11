@@ -1,33 +1,39 @@
+from __future__ import annotations
+
 import shutil
+import sys
 import time
+from pathlib import Path
 
 from hatui.core.input_manager import InputManager
 from hatui.core.screen_buffer import ScreenBuffer
-from hatui.core.style import BorderTheme, TextTheme, Theme
 from hatui.core.terminal_env import TerminalEnvironment
-from hatui.widgets import BoxWidget, LabelWidget, RootWidget
+from hatui.runtime.defaults import create_provider_registry, create_widget_registry
+from hatui.runtime.loader import ScreenSpecLoader
+from hatui.runtime.provider_manager import ProviderManager
+from hatui.widgets.root_widget import RootWidget
 
 
 class HatuiApp:
-    def __init__(self):
-        self.root_widget = RootWidget(
-            "root",
-            theme=Theme(
-                border=BorderTheme(style="rounded", fg_color="bright_black"),
-                text=TextTheme(fg_color="#d7d7e0"),
-            ),
-            children=[
-                BoxWidget(
-                    "box",
-                    title="hatui",
-                    padding=1,
-                    child=LabelWidget(
-                        "text1",
-                        text="Use sample_app.py for the full dashboard demo.",
-                    ),
-                )
-            ],
-        )
+    def __init__(
+        self,
+        spec_path: str | Path,
+        *,
+        widget_registry=None,
+        provider_registry=None,
+    ):
+        self.spec_path = Path(spec_path)
+        self.widget_registry = widget_registry or create_widget_registry()
+        self.provider_registry = provider_registry or create_provider_registry()
+        self.loader = ScreenSpecLoader(self.widget_registry, self.provider_registry)
+
+        spec = self.loader.load_spec(self.spec_path)
+        theme = self.loader.load_theme(spec)
+        screen = self.loader.load_screen(spec)
+        providers = self.loader.load_providers(spec)
+
+        self.root_widget = RootWidget("root", children=[screen], theme=theme)
+        self.provider_manager = ProviderManager(providers)
 
         width, height = self._get_terminal_size()
         self.screen_buffer = ScreenBuffer(width=width, height=height)
@@ -37,54 +43,56 @@ class HatuiApp:
         self._start_time = self._last_frame_time
 
     def _get_terminal_size(self) -> tuple[int, int]:
-        size = shutil.get_terminal_size(fallback=(80, 24))
+        size = shutil.get_terminal_size(fallback=(100, 32))
         return max(size.columns, 1), max(size.lines, 1)
 
     def run(self):
-        # Begin the application loop
         running = True
         with self.environment.manage():
+            self.provider_manager.setup(self.root_widget.context)
             try:
                 while running:
-                    # Poll for input
-                    self.input_manager.poll_input(timeout=0.05)
+                    key_event = self.input_manager.poll_input(timeout=0.05)
+                    if key_event is not None:
+                        key, modifiers = key_event
+                        self.root_widget.handle_input(key, modifiers, self.root_widget.context)
 
                     width, height = self._get_terminal_size()
                     if (width, height) != (self.screen_buffer.width, self.screen_buffer.height):
                         self.screen_buffer.resize(width, height)
 
                     self.update()
-
-                    # Allocate and layout the root widget
                     self.root_widget.allocate(self.screen_buffer.width, self.screen_buffer.height)
                     self.root_widget.layout(0, 0, self.root_widget.context)
-
-                    # Reset the previous frame before repainting.
                     self.screen_buffer.clear()
-
-                    # Paint the root widget to the screen buffer
                     self.root_widget.paint(self.screen_buffer, self.root_widget.context)
-
-                    # Flush the screen buffer to the terminal
                     self.screen_buffer.flush()
             except KeyboardInterrupt:
                 running = False
-                
+            finally:
+                self.provider_manager.teardown(self.root_widget.context)
+
     def update(self):
         now = time.monotonic()
-        self.root_widget.context.delta_time = now - self._last_frame_time
-        self.root_widget.context.elapsed_time = now - self._start_time
-        self.root_widget.context.frame += 1
-        self.root_widget.context.terminal_width = self.screen_buffer.width
-        self.root_widget.context.terminal_height = self.screen_buffer.height
-        self.root_widget.context.widget_width = self.screen_buffer.width
-        self.root_widget.context.widget_height = self.screen_buffer.height
-        self.root_widget.update(self.root_widget.context.delta_time, self.root_widget.context)
+        context = self.root_widget.context
+        context.delta_time = now - self._last_frame_time
+        context.elapsed_time = now - self._start_time
+        context.frame += 1
+        context.terminal_width = self.screen_buffer.width
+        context.terminal_height = self.screen_buffer.height
+        context.widget_width = self.screen_buffer.width
+        context.widget_height = self.screen_buffer.height
+        self.provider_manager.update(context.delta_time, context)
+        self.root_widget.update(context.delta_time, context)
         self._last_frame_time = now
 
+
 def main():
-    app = HatuiApp()
+    default_spec = Path(__file__).resolve().parents[2] / "screens" / "dashboard.yaml"
+    spec_path = Path(sys.argv[1]) if len(sys.argv) > 1 else default_spec
+    app = HatuiApp(spec_path=spec_path)
     app.run()
+
 
 if __name__ == "__main__":
     main()

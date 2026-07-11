@@ -56,6 +56,17 @@ class TabsWidget(Widget):
         if self.children:
             self.state["active_index"] = (self.active_index - 1) % len(self.children)
 
+    def handle_input(self, key: str, modifiers: list[str], context: WidgetContext) -> bool:
+        if "arrow" in modifiers and key == "right":
+            self.next_tab()
+            return True
+        if "arrow" in modifiers and key == "left":
+            self.previous_tab()
+            return True
+        if self.active_child is not None:
+            return self.active_child.handle_input(key, modifiers, context)
+        return False
+
     def allocate_children(self, width: int, height: int):
         if not self.active_child:
             return

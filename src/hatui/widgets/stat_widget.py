@@ -1,5 +1,6 @@
 from hatui.core.style import Style, resolve_style
 from hatui.core.widget import Widget, WidgetContext
+from hatui.runtime.bindings import resolve_path
 
 
 class StatWidget(Widget):
@@ -37,7 +38,7 @@ class StatWidget(Widget):
         }
 
     def update(self, delta_time: float, context: WidgetContext):
-        payload = context.data.get(self.data_key, None) if self.data_key is not None else None
+        payload = resolve_path(context.data, self.data_key, None) if self.data_key is not None else None
         if isinstance(payload, dict):
             value = payload.get("value", "0")
             secondary = payload.get("secondary", "")

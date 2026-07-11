@@ -1,5 +1,6 @@
 from hatui.core.style import Style, resolve_style
 from hatui.core.widget import Widget, WidgetContext
+from hatui.runtime.bindings import resolve_path
 
 
 class TableWidget(Widget):
@@ -36,7 +37,7 @@ class TableWidget(Widget):
         }
 
     def update(self, delta_time: float, context: WidgetContext):
-        rows = context.data.get(self.rows_key, []) if self.rows_key is not None else []
+        rows = resolve_path(context.data, self.rows_key, []) if self.rows_key is not None else []
         self.state["rows"] = list(rows)
         super().update(delta_time, context)
 

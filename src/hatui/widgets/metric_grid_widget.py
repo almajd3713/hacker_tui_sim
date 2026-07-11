@@ -1,5 +1,6 @@
 from hatui.core.style import Style, resolve_style
 from hatui.core.widget import Widget, WidgetContext
+from hatui.runtime.bindings import resolve_path
 
 
 class MetricGridWidget(Widget):
@@ -36,7 +37,7 @@ class MetricGridWidget(Widget):
         }
 
     def update(self, delta_time: float, context: WidgetContext):
-        metrics = context.data.get(self.metrics_key, []) if self.metrics_key is not None else []
+        metrics = resolve_path(context.data, self.metrics_key, []) if self.metrics_key is not None else []
         self.state["metrics"] = list(metrics)
         super().update(delta_time, context)
 

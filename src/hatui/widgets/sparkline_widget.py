@@ -1,5 +1,6 @@
 from hatui.core.style import Style, resolve_style
 from hatui.core.widget import Widget, WidgetContext
+from hatui.runtime.bindings import resolve_path
 
 
 class SparklineWidget(Widget):
@@ -29,7 +30,7 @@ class SparklineWidget(Widget):
         }
 
     def update(self, delta_time: float, context: WidgetContext):
-        values = context.data.get(self.values_key, []) if self.values_key is not None else []
+        values = resolve_path(context.data, self.values_key, []) if self.values_key is not None else []
         self.state["values"] = list(values)
         super().update(delta_time, context)
 

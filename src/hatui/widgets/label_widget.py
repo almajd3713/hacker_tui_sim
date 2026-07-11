@@ -1,5 +1,6 @@
 from hatui.core.style import Style, resolve_style
 from hatui.core.widget import Widget, WidgetContext
+from hatui.runtime.bindings import resolve_path
 
 
 class LabelWidget(Widget):
@@ -40,7 +41,7 @@ class LabelWidget(Widget):
 
     def update(self, delta_time: float, context: WidgetContext):
         if self.text_key is not None:
-            self.state["text"] = str(context.data.get(self.text_key, ""))
+            self.state["text"] = str(resolve_path(context.data, self.text_key, ""))
         else:
             self.state["text"] = self.text
         super().update(delta_time, context)

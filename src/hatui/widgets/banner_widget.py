@@ -1,5 +1,6 @@
 from hatui.core.style import Style, resolve_style
 from hatui.core.widget import Widget, WidgetContext
+from hatui.runtime.bindings import resolve_path
 
 
 class BannerWidget(Widget):
@@ -33,7 +34,7 @@ class BannerWidget(Widget):
         }
 
     def update(self, delta_time: float, context: WidgetContext):
-        self.state["text"] = str(context.data.get(self.text_key, self.text)) if self.text_key is not None else self.text
+        self.state["text"] = str(resolve_path(context.data, self.text_key, self.text)) if self.text_key is not None else self.text
         super().update(delta_time, context)
 
     def allocate(self, width: int, height: int):

@@ -1,5 +1,6 @@
 from hatui.core.style import Style, resolve_style
 from hatui.core.widget import Widget, WidgetContext
+from hatui.runtime.bindings import resolve_path
 
 
 class HexDumpWidget(Widget):
@@ -33,7 +34,7 @@ class HexDumpWidget(Widget):
         }
 
     def update(self, delta_time: float, context: WidgetContext):
-        data = context.data.get(self.data_key, []) if self.data_key is not None else []
+        data = resolve_path(context.data, self.data_key, []) if self.data_key is not None else []
         self.state["data"] = list(data)
         super().update(delta_time, context)
 

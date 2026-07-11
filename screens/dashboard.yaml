@@ -1,0 +1,617 @@
+theme:
+  border:
+    style: sharp
+    fg_color: "#5a5a78"
+    bg_color: default
+    font_name: JetBrains Mono
+  text:
+    fg_color: "#d7d7e0"
+    bg_color: default
+    font_name: JetBrains Mono
+
+providers:
+  - type: clock
+    name: clock
+    target: runtime.clock
+    interval: 1.0
+
+  - type: frame
+    name: frame
+    target: runtime.frame
+
+  - type: host_info
+    name: host_info
+    target: host
+    interval: 2.0
+
+  - type: system_stats
+    name: system_stats
+    target: system
+    interval: 2.0
+
+  - type: constant
+    name: header_text
+    target: ui.header_text
+    value: LIVE OPERATIONS DASHBOARD
+
+  - type: constant
+    name: header_subtitle
+    target: ui.header_subtitle
+    value: adaptive telemetry // yaml runtime demo
+
+  - type: constant
+    name: overview_text
+    target: ui.overview_text
+    value: Monitoring compute load, uplink stability, and packet bursts. This screen is loaded from YAML and fed by generic providers through dotted-path bindings.
+
+  - type: constant
+    name: logs_note
+    target: ui.logs_note
+    value: The log view is isolated in its own tab so providers can keep pushing events without forcing every screen to show them.
+
+  - type: constant
+    name: hex_dump
+    target: panels.hex_dump
+    value: [77, 83, 89, 83, 45, 52, 10, 123, 114, 101, 108, 97, 121, 58, 51, 125, 59, 10, 255, 0, 126, 65, 66]
+
+  - type: waveform
+    name: scan_progress
+    target: signals.scan_progress
+    waveform: sine
+    frequency: 0.9
+    amplitude: 0.45
+    offset: 0.5
+
+  - type: waveform
+    name: uplink_progress
+    target: signals.uplink_progress
+    waveform: sine
+    frequency: 0.55
+    phase: 1.8
+    amplitude: 0.35
+    offset: 0.55
+
+  - type: waveform
+    name: packet_sample
+    target: signals.packet_sample
+    waveform: sine
+    frequency: 2.6
+    amplitude: 0.24
+    offset: 0.62
+
+  - type: waveform
+    name: mini_chart_sample
+    target: signals.mini_chart_sample
+    waveform: sine
+    frequency: 1.2
+    phase: 0.5
+    amplitude: 0.4
+    offset: 0.6
+
+  - type: waveform
+    name: thread_count
+    target: stats_sources.thread_count
+    waveform: sine
+    frequency: 0.55
+    phase: 0.6
+    amplitude: 5.0
+    offset: 10.0
+
+  - type: waveform
+    name: memory_gb
+    target: stats_sources.memory_gb
+    waveform: sine
+    frequency: 0.42
+    phase: 1.2
+    amplitude: 4.5
+    offset: 6.0
+
+  - type: waveform
+    name: cache_gb
+    target: stats_sources.cache_gb
+    waveform: sine
+    frequency: 0.78
+    phase: 0.15
+    amplitude: 1.2
+    offset: 1.0
+
+  - type: waveform
+    name: network_rx
+    target: stats_sources.network_rx
+    waveform: sine
+    frequency: 0.73
+    phase: 0.2
+    amplitude: 320
+    offset: 520
+
+  - type: waveform
+    name: network_tx
+    target: stats_sources.network_tx
+    waveform: sine
+    frequency: 0.57
+    phase: 1.7
+    amplitude: 180
+    offset: 240
+
+  - type: rolling_window
+    name: packet_series
+    target: telemetry.packet_series
+    source: signals.packet_sample
+    size: 48
+
+  - type: rolling_window
+    name: mini_chart
+    target: telemetry.mini_chart
+    source: signals.mini_chart_sample
+    size: 24
+
+  - type: threshold
+    name: alert_level
+    target: alerts.level
+    source: signals.packet_sample
+    operator: gt
+    value: 0.75
+    true: warn
+    false: info
+
+  - type: threshold
+    name: alert_message
+    target: alerts.message
+    source: signals.packet_sample
+    operator: gt
+    value: 0.75
+    true: packet burst nearing threshold
+    false: all monitored channels nominal
+
+  - type: compose
+    name: cpu_stat
+    target: stats.cpu
+    mapping:
+      value:
+        path: signals.scan_progress
+        formatter:
+          name: percent
+          precision: 1
+      secondary:
+        path: stats_sources.thread_count
+        formatter:
+          name: fixed
+          precision: 0
+        template: "threads {value}"
+
+  - type: compose
+    name: memory_stat
+    target: stats.memory
+    mapping:
+      value:
+        path: stats_sources.memory_gb
+        formatter:
+          name: fixed
+          precision: 1
+        template: "{value} GB"
+      secondary:
+        path: stats_sources.cache_gb
+        formatter:
+          name: fixed
+          precision: 1
+        template: "cache {value} GB"
+
+  - type: compose
+    name: network_stat
+    target: stats.network
+    mapping:
+      value:
+        path: stats_sources.network_rx
+        formatter:
+          name: fixed
+          precision: 0
+        template: "{value} kb/s"
+      secondary:
+        path: stats_sources.network_tx
+        formatter:
+          name: fixed
+          precision: 0
+        template: "tx {value} kb/s"
+
+  - type: template
+    name: telemetry_summary
+    target: telemetry.summary
+    template: "frame {frame}  delta {delta}ms  burst {burst}"
+    mapping:
+      frame:
+        path: runtime.frame.frame
+        formatter:
+          name: fixed
+          precision: 0
+      delta:
+        path: runtime.frame.delta_time
+        formatter:
+          name: fixed
+          precision: 3
+      burst:
+        path: signals.packet_sample
+        formatter:
+          name: fixed
+          precision: 2
+
+  - type: records
+    name: metric_grid
+    target: panels.metric_grid
+    items:
+      - label: host
+        value:
+          path: host.hostname
+      - label: cpu
+        value:
+          path: system.cpu_count
+      - label: load
+        value:
+          path: system.loadavg.1m
+          formatter:
+            name: fixed
+            precision: 2
+      - label: auth
+        value:
+          path: signals.uplink_progress
+          formatter:
+            name: percent
+            precision: 0
+      - label: burst
+        value:
+          path: signals.packet_sample
+          formatter:
+            name: fixed
+            precision: 2
+      - label: disk
+        value:
+          path: system.disk.used
+          formatter:
+            name: bytes
+
+  - type: records
+    name: relay_rows
+    target: panels.relay_rows
+    items:
+      - relay: r-01
+        latency:
+          path: stats_sources.network_rx
+          formatter:
+            name: fixed
+            precision: 0
+          template: "{value}ms"
+        loss: 0.1%
+        state: stable
+      - relay: r-02
+        latency:
+          path: stats_sources.network_tx
+          formatter:
+            name: fixed
+            precision: 0
+          template: "{value}ms"
+        loss: 0.4%
+        state: syncing
+      - relay: r-03
+        latency:
+          path: stats_sources.memory_gb
+          formatter:
+            name: fixed
+            precision: 0
+          template: "{value}ms"
+        loss: 2.1%
+        state: retry
+      - relay: r-04
+        latency:
+          path: stats_sources.cache_gb
+          formatter:
+            name: fixed
+            precision: 0
+          template: "{value}ms"
+        loss: 0.0%
+        state: stable
+      - relay: r-05
+        latency:
+          path: signals.scan_progress
+          formatter:
+            name: percent
+            precision: 0
+        loss: 0.3%
+        state: warming
+
+  - type: template
+    name: code_block
+    target: panels.code_block
+    template: |-
+      scan(node_cluster);
+      refresh(relay_{relay});
+      latency_window = {latency};
+      packet_burst = {burst};
+      if packet_burst > 0.82:
+          flag('jitter-threshold');
+      commit(snapshot);
+    mapping:
+      relay:
+        path: stats_sources.thread_count
+        formatter:
+          name: fixed
+          precision: 0
+      latency:
+        path: stats_sources.network_tx
+        formatter:
+          name: fixed
+          precision: 0
+      burst:
+        path: signals.packet_sample
+        formatter:
+          name: fixed
+          precision: 3
+
+  - type: demo_logs
+    name: logs
+    target: logs.main
+    interval: 1.0
+    max_lines: 80
+
+  - type: records
+    name: status_strip
+    target: ui.status_strip
+    items:
+      - text: overview
+      - text:
+          path: runtime.frame.frame
+          formatter:
+            name: fixed
+            precision: 0
+          template: "frame {value}"
+        fg_color: "#59d0ff"
+      - text:
+          path: runtime.frame.delta_time
+          formatter:
+            name: fixed
+            precision: 3
+          template: "dt {value}ms"
+        fg_color: "#4de0a8"
+      - text:
+          path: signals.packet_sample
+          formatter:
+            name: fixed
+            precision: 2
+          template: "burst {value}"
+        fg_color: "#cbb7ff"
+
+screen:
+  type: tabs
+  name: root_tabs
+  show_tabs: true
+  tabs:
+    - title: Overview
+      child:
+        type: column
+        name: overview_screen
+        children:
+          - type: box
+            name: header_box
+            title: msys
+            title_align: center
+            padding: 1
+            style: rounded
+            fg_color: "#9b4dff"
+            weight: 4
+            child:
+              type: column
+              name: header_column
+              children:
+                - type: banner
+                  name: header_banner
+                  text_key: ui.header_text
+                  fg_color: "#cbb7ff"
+                  weight: 3
+                - type: label
+                  name: header_label
+                  text_key: ui.header_subtitle
+                  align: center
+                  fg_color: "#9e8be0"
+                  weight: 1
+          - type: row
+            name: stats_row
+            weight: 3
+            children:
+              - type: box
+                name: cpu_box
+                title: cpu
+                padding: 1
+                weight: 1
+                child:
+                  type: stat
+                  name: cpu_stat
+                  label: load avg
+                  data_key: stats.cpu
+                  accent_color: "#ff4d6d"
+              - type: box
+                name: mem_box
+                title: memory
+                padding: 1
+                weight: 1
+                child:
+                  type: stat
+                  name: mem_stat
+                  label: resident
+                  data_key: stats.memory
+                  accent_color: "#4de0a8"
+              - type: box
+                name: net_box
+                title: network
+                padding: 1
+                weight: 1
+                child:
+                  type: stat
+                  name: net_stat
+                  label: rx / tx
+                  data_key: stats.network
+                  accent_color: "#59d0ff"
+          - type: row
+            name: telemetry_row
+            weight: 7
+            children:
+              - type: box
+                name: overview_box
+                title: overview
+                padding: 1
+                weight: 3
+                child:
+                  type: column
+                  name: overview_column
+                  children:
+                    - type: paragraph
+                      name: overview_text
+                      text_key: ui.overview_text
+                      fg_color: "#f2f2f7"
+                      weight: 3
+                    - type: alert
+                      name: overview_alert
+                      message_key: alerts.message
+                      level_key: alerts.level
+                      weight: 1
+                    - type: progress_bar
+                      name: scan_bar
+                      label: deep scan
+                      value_key: signals.scan_progress
+                      show_percentage: true
+                      fill_color: "#ff4d6d"
+                      weight: 1
+                    - type: progress_bar
+                      name: uplink_bar
+                      label: uplink sync
+                      value_key: signals.uplink_progress
+                      show_percentage: true
+                      fill_color: "#4de0a8"
+                      weight: 1
+              - type: box
+                name: telemetry_box
+                title: telemetry
+                padding: 1
+                weight: 2
+                child:
+                  type: column
+                  name: telemetry_column
+                  children:
+                    - type: label
+                      name: sparkline_label
+                      text: packet burst
+                      fg_color: "#f2f2f7"
+                      weight: 1
+                    - type: sparkline
+                      name: telemetry_sparkline
+                      values_key: telemetry.packet_series
+                      fg_color: "#59d0ff"
+                      weight: 1
+                    - type: mini_chart
+                      name: telemetry_mini_chart
+                      values_key: telemetry.mini_chart
+                      fg_color: "#4de0a8"
+                      weight: 4
+                    - type: paragraph
+                      name: telemetry_copy
+                      text_key: telemetry.summary
+                      weight: 2
+          - type: status_strip
+            name: overview_status_strip
+            segments_key: ui.status_strip
+            bg_color: bright_black
+            weight: 1
+
+    - title: Forensics
+      child:
+        type: column
+        name: forensics_screen
+        children:
+          - type: box
+            name: forensics_box
+            title: forensics
+            padding: 1
+            weight: 10
+            child:
+              type: row
+              name: forensics_row
+              children:
+                - type: box
+                  name: metrics_box
+                  title: node metrics
+                  padding: 1
+                  weight: 3
+                  child:
+                    type: column
+                    name: metrics_column
+                    children:
+                      - type: metric_grid
+                        name: metric_grid
+                        metrics_key: panels.metric_grid
+                        columns: 2
+                        accent_color: "#f2f2f7"
+                        weight: 2
+                      - type: divider
+                        name: metric_divider
+                        fg_color: "#5a5a78"
+                        weight: 1
+                      - type: code_block
+                        name: code_block
+                        code_key: panels.code_block
+                        show_line_numbers: true
+                        line_number_color: "#5a5a78"
+                        weight: 3
+                      - type: hex_dump
+                        name: hex_dump
+                        data_key: panels.hex_dump
+                        bytes_per_row: 8
+                        offset_color: "#5a5a78"
+                        weight: 2
+                - type: box
+                  name: table_box
+                  title: relay table
+                  padding: 1
+                  weight: 2
+                  child:
+                    type: table
+                    name: relay_table
+                    rows_key: panels.relay_rows
+                    header_color: "#f2f2f7"
+                    columns:
+                      - {title: relay, key: relay, width: 8}
+                      - {title: lat, key: latency, width: 7, align: right}
+                      - {title: loss, key: loss, width: 6, align: right}
+                      - {title: state, key: state}
+          - type: status_strip
+            name: forensics_status_strip
+            segments_key: ui.status_strip
+            bg_color: bright_black
+            weight: 1
+
+    - title: Logs
+      child:
+        type: column
+        name: logs_screen
+        children:
+          - type: box
+            name: logs_box
+            title: event log
+            padding: 1
+            weight: 8
+            child:
+              type: log
+              name: log_widget
+              lines_key: logs.main
+              max_lines: 80
+              show_timestamp: true
+          - type: box
+            name: status_box
+            title: operator note
+            padding: 1
+            weight: 2
+            child:
+              type: paragraph
+              name: logs_note
+              text_key: ui.logs_note
+          - type: status_strip
+            name: logs_status_strip
+            segments_key: ui.status_strip
+            bg_color: bright_black
+            weight: 1

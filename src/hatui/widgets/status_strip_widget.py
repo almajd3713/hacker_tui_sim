@@ -1,5 +1,6 @@
 from hatui.core.style import Style, resolve_style
 from hatui.core.widget import Widget, WidgetContext
+from hatui.runtime.bindings import resolve_path
 
 
 class StatusStripWidget(Widget):
@@ -30,7 +31,7 @@ class StatusStripWidget(Widget):
         }
 
     def update(self, delta_time: float, context: WidgetContext):
-        self.state["segments"] = list(context.data.get(self.segments_key, [])) if self.segments_key is not None else []
+        self.state["segments"] = list(resolve_path(context.data, self.segments_key, [])) if self.segments_key is not None else []
         super().update(delta_time, context)
 
     def allocate(self, width: int, height: int):

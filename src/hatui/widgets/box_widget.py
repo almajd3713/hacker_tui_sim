@@ -1,5 +1,6 @@
 from hatui.core.style import BorderTheme
 from hatui.core.widget import Widget, WidgetContext
+from hatui.runtime.bindings import resolve_path
 from hatui.widgets.border_widget import BorderWidget
 
 
@@ -47,7 +48,7 @@ class BoxWidget(BorderWidget):
 
     def update(self, delta_time: float, context: WidgetContext):
         if self.title_key is not None:
-            self.state["title"] = str(context.data.get(self.title_key, ""))
+            self.state["title"] = str(resolve_path(context.data, self.title_key, ""))
         else:
             self.state["title"] = self.title or ""
         super().update(delta_time, context)

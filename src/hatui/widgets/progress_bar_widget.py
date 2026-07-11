@@ -1,5 +1,6 @@
 from hatui.core.style import Style, resolve_style
 from hatui.core.widget import Widget, WidgetContext
+from hatui.runtime.bindings import resolve_path
 
 
 class ProgressBarWidget(Widget):
@@ -42,7 +43,7 @@ class ProgressBarWidget(Widget):
         }
 
     def update(self, delta_time: float, context: WidgetContext):
-        value = context.data.get(self.value_key, 0.0) if self.value_key is not None else 0.0
+        value = resolve_path(context.data, self.value_key, 0.0) if self.value_key is not None else 0.0
         try:
             numeric = float(value)
         except (TypeError, ValueError):

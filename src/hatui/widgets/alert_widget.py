@@ -1,5 +1,6 @@
 from hatui.core.style import Style, resolve_style
 from hatui.core.widget import Widget, WidgetContext
+from hatui.runtime.bindings import resolve_path
 
 
 class AlertWidget(Widget):
@@ -44,8 +45,8 @@ class AlertWidget(Widget):
         }
 
     def update(self, delta_time: float, context: WidgetContext):
-        self.state["message"] = str(context.data.get(self.message_key, self.message)) if self.message_key is not None else self.message
-        self.state["level"] = str(context.data.get(self.level_key, self.level)) if self.level_key is not None else self.level
+        self.state["message"] = str(resolve_path(context.data, self.message_key, self.message)) if self.message_key is not None else self.message
+        self.state["level"] = str(resolve_path(context.data, self.level_key, self.level)) if self.level_key is not None else self.level
         super().update(delta_time, context)
 
     def allocate(self, width: int, height: int):

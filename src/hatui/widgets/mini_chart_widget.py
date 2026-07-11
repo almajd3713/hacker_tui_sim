@@ -1,5 +1,6 @@
 from hatui.core.style import Style, resolve_style
 from hatui.core.widget import Widget, WidgetContext
+from hatui.runtime.bindings import resolve_path
 
 
 class MiniChartWidget(Widget):
@@ -30,7 +31,7 @@ class MiniChartWidget(Widget):
         }
 
     def update(self, delta_time: float, context: WidgetContext):
-        self.state["values"] = list(context.data.get(self.values_key, [])) if self.values_key is not None else []
+        self.state["values"] = list(resolve_path(context.data, self.values_key, [])) if self.values_key is not None else []
         super().update(delta_time, context)
 
     def allocate(self, width: int, height: int):

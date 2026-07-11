@@ -1,5 +1,6 @@
 from hatui.core.style import Style, resolve_style
 from hatui.core.widget import Widget, WidgetContext
+from hatui.runtime.bindings import resolve_path
 
 
 class CodeBlockWidget(Widget):
@@ -36,7 +37,7 @@ class CodeBlockWidget(Widget):
         }
 
     def update(self, delta_time: float, context: WidgetContext):
-        code = context.data.get(self.code_key, self.code) if self.code_key is not None else self.code
+        code = resolve_path(context.data, self.code_key, self.code) if self.code_key is not None else self.code
         self.state["lines"] = str(code).splitlines()
         super().update(delta_time, context)
 

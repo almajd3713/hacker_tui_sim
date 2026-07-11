@@ -81,6 +81,12 @@ class Widget(ABC):
     def update_children(self, delta_time: float, context: Context):
         for child in self.children:
             child.update(delta_time, context)
+
+    def handle_input(self, key: str, modifiers: list[str], context: Context) -> bool:
+        for child in self.children:
+            if child.handle_input(key, modifiers, context):
+                return True
+        return False
     
     @abstractmethod
     def allocate_children(self, width: int, height: int):

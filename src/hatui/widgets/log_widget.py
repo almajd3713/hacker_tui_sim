@@ -1,5 +1,6 @@
 from hatui.core.style import Style, resolve_style
 from hatui.core.widget import Widget, WidgetContext
+from hatui.runtime.bindings import resolve_path
 
 
 class LogWidget(Widget):
@@ -40,7 +41,7 @@ class LogWidget(Widget):
         }
 
     def update(self, delta_time: float, context: WidgetContext):
-        lines = context.data.get(self.lines_key, []) if self.lines_key is not None else []
+        lines = resolve_path(context.data, self.lines_key, []) if self.lines_key is not None else []
         self.state["lines"] = list(lines)[-self.max_lines :]
         super().update(delta_time, context)
 
