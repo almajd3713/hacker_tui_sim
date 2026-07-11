@@ -47,6 +47,7 @@ class ScreenSpecLoader:
         if not widget_type:
             raise ValueError("Widget spec missing 'type'")
         widget = self.widget_registry.create(widget_type, spec, self)
+        widget.configure_interaction(spec)
         weight = spec.get("weight")
         if weight is not None:
             widget.set_layout_weight(weight)

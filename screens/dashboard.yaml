@@ -357,6 +357,10 @@ providers:
     items:
       - text: overview
       - text:
+          path: _ui.focused_widget
+          template: "focus {value}"
+        fg_color: "#ffd166"
+      - text:
           path: runtime.frame.frame
           formatter:
             name: fixed
@@ -377,11 +381,30 @@ providers:
             precision: 2
           template: "burst {value}"
         fg_color: "#cbb7ff"
+      - text: "tab focus"
+        fg_color: "#9e8be0"
+      - text: "1-3 screens"
+        fg_color: "#9e8be0"
 
 screen:
   type: tabs
   name: root_tabs
   show_tabs: true
+  focus_fg_color: "#59d0ff"
+  focus_bg_color: "#1d2533"
+  keybindings:
+    - key: "1"
+      action: activate_index
+      payload:
+        index: 0
+    - key: "2"
+      action: activate_index
+      payload:
+        index: 1
+    - key: "3"
+      action: activate_index
+      payload:
+        index: 2
   tabs:
     - title: Overview
       child:
@@ -395,6 +418,8 @@ screen:
             padding: 1
             style: rounded
             fg_color: "#9b4dff"
+            focusable: true
+            focus_fg_color: "#59d0ff"
             weight: 4
             child:
               type: column
@@ -419,6 +444,8 @@ screen:
                 name: cpu_box
                 title: cpu
                 padding: 1
+                focusable: true
+                focus_fg_color: "#59d0ff"
                 weight: 1
                 child:
                   type: stat
@@ -430,6 +457,8 @@ screen:
                 name: mem_box
                 title: memory
                 padding: 1
+                focusable: true
+                focus_fg_color: "#59d0ff"
                 weight: 1
                 child:
                   type: stat
@@ -441,6 +470,8 @@ screen:
                 name: net_box
                 title: network
                 padding: 1
+                focusable: true
+                focus_fg_color: "#59d0ff"
                 weight: 1
                 child:
                   type: stat
@@ -456,6 +487,8 @@ screen:
                 name: overview_box
                 title: overview
                 padding: 1
+                focusable: true
+                focus_fg_color: "#59d0ff"
                 weight: 3
                 child:
                   type: column
@@ -489,6 +522,8 @@ screen:
                 name: telemetry_box
                 title: telemetry
                 padding: 1
+                focusable: true
+                focus_fg_color: "#59d0ff"
                 weight: 2
                 child:
                   type: column
@@ -537,6 +572,8 @@ screen:
                   name: metrics_box
                   title: node metrics
                   padding: 1
+                  focusable: true
+                  focus_fg_color: "#59d0ff"
                   weight: 3
                   child:
                     type: column
@@ -568,6 +605,8 @@ screen:
                   name: table_box
                   title: relay table
                   padding: 1
+                  focusable: true
+                  focus_fg_color: "#59d0ff"
                   weight: 2
                   child:
                     type: table
@@ -594,6 +633,8 @@ screen:
             name: logs_box
             title: event log
             padding: 1
+            focusable: true
+            focus_fg_color: "#59d0ff"
             weight: 8
             child:
               type: log
@@ -605,6 +646,8 @@ screen:
             name: status_box
             title: operator note
             padding: 1
+            focusable: true
+            focus_fg_color: "#59d0ff"
             weight: 2
             child:
               type: paragraph

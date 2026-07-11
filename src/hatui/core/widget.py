@@ -1,7 +1,9 @@
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
-from typing import List
+from copy import deepcopy
+from typing import Any, List
 
+from hatui.core.actions import KeyBinding, normalize_chord, parse_keybinding
 from hatui.core.screen_buffer import ScreenBuffer
 from hatui.core.style import Theme
 
@@ -55,11 +57,93 @@ class Widget(ABC):
         )
         self.state = {}
         self.layout_weight = 1
-        self.children: List[Widget] = children if children is not None else []
+        self.parent: Widget | None = None
+        self.children: List[Widget] = []
+        self.focusable = False
+        self.focus_fg_color: str | None = None
+        self.focus_bg_color: str | None = None
+        self.keybindings: list[KeyBinding] = []
+        for child in children or []:
+            self.add_child(child)
 
     def set_layout_weight(self, weight: int | float):
         self.layout_weight = max(float(weight), 0.0)
         return self
+
+    def add_child(self, child: 'Widget'):
+        child.parent = self
+        self.children.append(child)
+        return child
+
+    def default_focusable(self) -> bool:
+        return False
+
+    def default_keybindings(self) -> list[dict[str, Any]]:
+        return []
+
+    def configure_interaction(self, spec: dict[str, Any] | None = None):
+        spec = spec or {}
+        bindings = [parse_keybinding(item) for item in self.default_keybindings()]
+        bindings.extend(parse_keybinding(item) for item in spec.get("keybindings", []))
+        self.keybindings = bindings
+
+        focusable = spec.get("focusable")
+        if focusable is None:
+            self.focusable = self.default_focusable() or bool(self.keybindings)
+        else:
+            self.focusable = bool(focusable)
+
+        self.focus_fg_color = spec.get("focus_fg_color")
+        self.focus_bg_color = spec.get("focus_bg_color")
+        return self
+
+    @property
+    def root(self) -> 'Widget':
+        current = self
+        while current.parent is not None:
+            current = current.parent
+        return current
+
+    def interaction_children(self) -> list['Widget']:
+        return self.children
+
+    def focusable_widgets(self) -> list['Widget']:
+        widgets = [self] if self.focusable else []
+        for child in self.interaction_children():
+            widgets.extend(child.focusable_widgets())
+        return widgets
+
+    def is_focused(self, context: Context) -> bool:
+        return context.focused_widget == self.name
+
+    def _binding_matches(self, binding: KeyBinding, key: str, modifiers: list[str]) -> bool:
+        return binding.chord == normalize_chord(key, modifiers)
+
+    def dispatch_keybindings(self, key: str, modifiers: list[str], context: Context) -> bool:
+        for binding in self.keybindings:
+            if self._binding_matches(binding, key, modifiers):
+                if not binding.action:
+                    return True
+                payload = deepcopy(binding.payload)
+                return self.perform_action(binding.action, payload, context)
+        return False
+
+    def perform_action(self, action: str, payload: dict[str, Any], context: Context) -> bool:
+        root = self.root
+        if action == "focus_next" and hasattr(root, "focus_next"):
+            return bool(root.focus_next(context))
+        if action == "focus_prev" and hasattr(root, "focus_prev"):
+            return bool(root.focus_prev(context))
+        if action == "focus_first" and hasattr(root, "focus_first"):
+            return bool(root.focus_first(context))
+        if action == "focus_last" and hasattr(root, "focus_last"):
+            return bool(root.focus_last(context))
+        if action == "focus_widget" and hasattr(root, "focus_widget"):
+            return bool(root.focus_widget(payload.get("target"), context))
+        return self.handle_action(action, payload, context)
+
+    def handle_action(self, action: str, payload: dict[str, Any], context: Context) -> bool:
+        return False
     
     def allocate(self, width: int, height: int):
         """
@@ -83,9 +167,6 @@ class Widget(ABC):
             child.update(delta_time, context)
 
     def handle_input(self, key: str, modifiers: list[str], context: Context) -> bool:
-        for child in self.children:
-            if child.handle_input(key, modifiers, context):
-                return True
         return False
     
     @abstractmethod

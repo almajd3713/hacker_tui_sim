@@ -33,6 +33,7 @@ class HatuiApp:
         providers = self.loader.load_providers(spec)
 
         self.root_widget = RootWidget("root", children=[screen], theme=theme)
+        self.root_widget.focus_first(self.root_widget.context)
         self.provider_manager = ProviderManager(providers)
 
         width, height = self._get_terminal_size()
@@ -55,7 +56,9 @@ class HatuiApp:
                     key_event = self.input_manager.poll_input(timeout=0.05)
                     if key_event is not None:
                         key, modifiers = key_event
-                        self.root_widget.handle_input(key, modifiers, self.root_widget.context)
+                        self.root_widget.context.last_key = key
+                        self.root_widget.context.last_modifiers = list(modifiers)
+                        self.root_widget.dispatch_key_event(key, modifiers, self.root_widget.context)
 
                     width, height = self._get_terminal_size()
                     if (width, height) != (self.screen_buffer.width, self.screen_buffer.height):

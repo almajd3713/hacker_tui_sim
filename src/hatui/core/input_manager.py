@@ -50,6 +50,24 @@ class InputManager:
         if raw in arrow_map:
             return arrow_map[raw], ["arrow"]
 
+        if raw == "\x1b[Z":
+            return "tab", ["shift"]
+
+        if raw == "\t":
+            return "tab", []
+
+        if raw in ("\r", "\n"):
+            return "enter", []
+
+        if raw in ("\x7f", "\b"):
+            return "backspace", []
+
+        if len(raw) == 1 and 0 < ord(raw) < 27:
+            return chr(ord(raw) + 96), ["ctrl"]
+
+        if raw == " ":
+            return "space", []
+
         if raw.startswith("\x1b"):
             return "escape", []
 

@@ -63,10 +63,15 @@ class BorderWidget(Widget):
     def _resolved_theme(self, context: WidgetContext) -> BorderTheme:
         fallback = context.theme.border
         style = self.style if self.style in self.BORDER_STYLES else fallback.style
+        fg_color = fallback.fg_color if self.fg_color is None else self.fg_color
+        bg_color = fallback.bg_color if self.bg_color is None else self.bg_color
+        if self.is_focused(context):
+            fg_color = self.focus_fg_color or fg_color
+            bg_color = self.focus_bg_color or bg_color
         return BorderTheme(
             style=style,
-            fg_color=fallback.fg_color if self.fg_color is None else self.fg_color,
-            bg_color=fallback.bg_color if self.bg_color is None else self.bg_color,
+            fg_color=fg_color,
+            bg_color=bg_color,
             font_name=fallback.font_name if self.font_name is None else self.font_name,
         )
 

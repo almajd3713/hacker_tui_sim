@@ -48,6 +48,15 @@ class TabsWidget(Widget):
             return None
         return self.children[self.active_index]
 
+    def default_focusable(self) -> bool:
+        return True
+
+    def default_keybindings(self) -> list[dict]:
+        return [
+            {"key": "left", "action": "activate_prev"},
+            {"key": "right", "action": "activate_next"},
+        ]
+
     def next_tab(self):
         if self.children:
             self.state["active_index"] = (self.active_index + 1) % len(self.children)
@@ -56,16 +65,23 @@ class TabsWidget(Widget):
         if self.children:
             self.state["active_index"] = (self.active_index - 1) % len(self.children)
 
-    def handle_input(self, key: str, modifiers: list[str], context: WidgetContext) -> bool:
-        if "arrow" in modifiers and key == "right":
+    def handle_action(self, action: str, payload: dict, context: WidgetContext) -> bool:
+        if action == "activate_next":
             self.next_tab()
             return True
-        if "arrow" in modifiers and key == "left":
+        if action == "activate_prev":
             self.previous_tab()
             return True
-        if self.active_child is not None:
-            return self.active_child.handle_input(key, modifiers, context)
+        if action == "activate_index":
+            index = int(payload.get("index", self.active_index))
+            if not self.children:
+                return False
+            self.state["active_index"] = max(0, min(index, len(self.children) - 1))
+            return True
         return False
+
+    def interaction_children(self) -> list[Widget]:
+        return [self.active_child] if self.active_child is not None else []
 
     def allocate_children(self, width: int, height: int):
         if not self.active_child:
@@ -84,17 +100,19 @@ class TabsWidget(Widget):
         self.active_child.layout(x, child_y, context)
 
     def _strip_styles(self, context: WidgetContext) -> tuple[Style, Style]:
+        focused_fg = self.focus_fg_color if self.is_focused(context) and self.focus_fg_color is not None else None
+        focused_bg = self.focus_bg_color if self.is_focused(context) and self.focus_bg_color is not None else None
         base = resolve_style(
-            fg_color=self.fg_color,
-            bg_color=self.bg_color,
+            fg_color=focused_fg or self.fg_color,
+            bg_color=focused_bg or self.bg_color,
             fallback=Style(
                 fg_color=context.theme.border.fg_color,
                 bg_color=context.theme.border.bg_color,
             ),
         )
         active = resolve_style(
-            fg_color=self.active_fg_color,
-            bg_color=self.active_bg_color,
+            fg_color=focused_fg or self.active_fg_color,
+            bg_color=focused_bg or self.active_bg_color,
             fallback=Style(
                 fg_color="#ffffff",
                 bg_color="#3a3f58",

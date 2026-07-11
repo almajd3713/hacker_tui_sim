@@ -16,6 +16,9 @@ class Context:
     delta_time: float = 0.0
     elapsed_time: float = 0.0
     frame: int = 0
+    focused_widget: str | None = None
+    last_key: str | None = None
+    last_modifiers: list[str] = field(default_factory=list)
 
 
 @dataclass

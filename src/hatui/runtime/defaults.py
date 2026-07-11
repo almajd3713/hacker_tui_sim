@@ -48,19 +48,21 @@ from hatui.widgets import (
     TextWidget,
 )
 
+GENERIC_WIDGET_KEYS = {"focusable", "focus_fg_color", "focus_bg_color", "keybindings"}
+
 
 def _clean(spec: dict, excluded: set[str]) -> dict:
     return {key: deepcopy(value) for key, value in spec.items() if key not in excluded}
 
 
 def _build_single_child(spec: dict, loader, widget_cls):
-    kwargs = _clean(spec, {"type", "weight", "child"})
+    kwargs = _clean(spec, {"type", "weight", "child", *GENERIC_WIDGET_KEYS})
     child = loader.build_widget(spec["child"]) if "child" in spec else None
     return widget_cls(child=child, **kwargs)
 
 
 def _build_center(spec: dict, loader):
-    kwargs = _clean(spec, {"type", "weight", "child"})
+    kwargs = _clean(spec, {"type", "weight", "child", *GENERIC_WIDGET_KEYS})
     child = loader.build_widget(spec["child"]) if "child" in spec else None
     children = [child] if child is not None else []
     return CenterWidget(children=children, **kwargs)
@@ -71,7 +73,7 @@ def _build_row(spec: dict, loader):
     for child_spec in spec.get("children", []):
         child = loader.build_widget(child_spec)
         children.append((child, child_spec.get("weight", 1)))
-    kwargs = _clean(spec, {"type", "weight", "children"})
+    kwargs = _clean(spec, {"type", "weight", "children", *GENERIC_WIDGET_KEYS})
     return RowWidget(children=children, **kwargs)
 
 
@@ -80,7 +82,7 @@ def _build_column(spec: dict, loader):
     for child_spec in spec.get("children", []):
         child = loader.build_widget(child_spec)
         children.append((child, child_spec.get("weight", 1)))
-    kwargs = _clean(spec, {"type", "weight", "children"})
+    kwargs = _clean(spec, {"type", "weight", "children", *GENERIC_WIDGET_KEYS})
     return ColumnWidget(children=children, **kwargs)
 
 
@@ -92,12 +94,12 @@ def _build_tabs(spec: dict, loader):
         if child_spec is None:
             raise ValueError("Tab spec requires 'child' or 'screen'")
         tabs.append((title, loader.build_widget(child_spec)))
-    kwargs = _clean(spec, {"type", "weight", "tabs"})
+    kwargs = _clean(spec, {"type", "weight", "tabs", *GENERIC_WIDGET_KEYS})
     return TabsWidget(tabs=tabs, **kwargs)
 
 
 def _build_plain(spec: dict, loader, widget_cls):
-    kwargs = _clean(spec, {"type", "weight"})
+    kwargs = _clean(spec, {"type", "weight", *GENERIC_WIDGET_KEYS})
     return widget_cls(**kwargs)
 
 
