@@ -1,5 +1,5 @@
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from hatui.core.style import Style, ansi_sequence
 
@@ -10,7 +10,7 @@ class Cell:
     A class to represent a single cell in the screen buffer, aka a single character.
     """
     char: str = ' '
-    style: Style = Style()
+    style: Style = field(default_factory=Style)
 
 class ScreenBuffer:
     """

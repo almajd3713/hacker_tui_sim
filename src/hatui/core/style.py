@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 
@@ -26,8 +26,8 @@ class TextTheme:
 
 @dataclass(frozen=True)
 class Theme:
-    border: BorderTheme = BorderTheme()
-    text: TextTheme = TextTheme()
+    border: BorderTheme = field(default_factory=BorderTheme)
+    text: TextTheme = field(default_factory=TextTheme)
 
 
 FG_COLOR_CODES = {

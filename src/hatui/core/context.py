@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Any
 
 @dataclass
 class Context:
@@ -7,10 +8,14 @@ class Context:
     """
     name: str
     version: str
-    
+    data: dict[str, Any] = field(default_factory=dict)
+
     # Terminal properties
     terminal_width: int = None
     terminal_height:int = None
+    delta_time: float = 0.0
+    elapsed_time: float = 0.0
+    frame: int = 0
 
 
 @dataclass

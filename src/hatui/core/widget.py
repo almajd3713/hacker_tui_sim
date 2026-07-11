@@ -1,22 +1,19 @@
-
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
-from typing import List, Dict
+from typing import List
 
 from hatui.core.screen_buffer import ScreenBuffer
 from hatui.core.style import Theme
 
-from .context import Context, Constraints
+from .context import Context
 
 @dataclass
-class WidgetContext:
+class WidgetContext(Context):
     """
     A class to represent the context of a widget.
     """
-    name: str
-    version: str
-    theme: Theme = Theme()
-    
+    theme: Theme = field(default_factory=Theme)
+
     # Terminal properties
     widget_width: int = None
     widget_height:int = None
@@ -68,6 +65,17 @@ class Widget(ABC):
         self.properties["rect"].height = height
 
         self.allocate_children(width, height)
+
+    def update(self, delta_time: float, context: Context):
+        """
+        ? Parent call.
+        Update the widget state for the current frame.
+        """
+        self.update_children(delta_time, context)
+
+    def update_children(self, delta_time: float, context: Context):
+        for child in self.children:
+            child.update(delta_time, context)
     
     @abstractmethod
     def allocate_children(self, width: int, height: int):
