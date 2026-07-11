@@ -8,9 +8,19 @@ class RootWidget(Widget):
     It serves as the entry point for rendering and managing the entire widget tree.
     It has a single child widget, which is the main content of the application.
     """
-    def __init__(self, name: str, children: list = None, theme: Theme | None = None):
+    def __init__(
+        self,
+        name: str,
+        children: list = None,
+        theme: Theme | None = None,
+        *,
+        store=None,
+        router=None,
+    ):
         super().__init__(name, children)
         self.context = WidgetContext(name=name, version="1.0.0", theme=theme or Theme())
+        self.store = store
+        self.router = router
         self.configure_interaction(
             {
                 "keybindings": [
@@ -57,6 +67,10 @@ class RootWidget(Widget):
             context.focused_widget = None
         context.data.setdefault("_ui", {})
         set_path(context.data, "_ui.focused_widget", context.focused_widget)
+        if self.store is not None:
+            self.store.sync_to_context(context)
+        if self.router is not None:
+            self.router.sync_to_context(context)
 
     def focus_first(self, context: WidgetContext) -> bool:
         focusables = self._focusable_widgets()
@@ -113,6 +127,55 @@ class RootWidget(Widget):
                 self._sync_focus(context)
                 return True
         return False
+
+    def route_set(self, route: str | None, context: WidgetContext) -> bool:
+        if self.router is None or not route:
+            return False
+        changed = self.router.set_current(route)
+        self._sync_focus(context)
+        return changed
+
+    def route_next(self, context: WidgetContext) -> bool:
+        if self.router is None:
+            return False
+        changed = self.router.next()
+        self._sync_focus(context)
+        return changed
+
+    def route_prev(self, context: WidgetContext) -> bool:
+        if self.router is None:
+            return False
+        changed = self.router.previous()
+        self._sync_focus(context)
+        return changed
+
+    def route_push(self, route: str | None, context: WidgetContext) -> bool:
+        if self.router is None or not route:
+            return False
+        changed = self.router.push(route)
+        self._sync_focus(context)
+        return changed
+
+    def route_pop(self, context: WidgetContext) -> bool:
+        if self.router is None:
+            return False
+        changed = self.router.pop()
+        self._sync_focus(context)
+        return changed
+
+    def store_set(self, path: str | None, value, context: WidgetContext) -> bool:
+        if self.store is None or not path:
+            return False
+        self.store.set(path, value)
+        self._sync_focus(context)
+        return True
+
+    def store_toggle(self, path: str | None, context: WidgetContext) -> bool:
+        if self.store is None or not path:
+            return False
+        self.store.toggle(path)
+        self._sync_focus(context)
+        return True
 
     def _target_widget(self, context: WidgetContext) -> Widget:
         self._sync_focus(context)

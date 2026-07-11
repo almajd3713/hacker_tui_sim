@@ -11,6 +11,8 @@ from hatui.core.terminal_env import TerminalEnvironment
 from hatui.runtime.defaults import create_provider_registry, create_widget_registry
 from hatui.runtime.loader import ScreenSpecLoader
 from hatui.runtime.provider_manager import ProviderManager
+from hatui.runtime.router import Router
+from hatui.runtime.store import Store
 from hatui.widgets.root_widget import RootWidget
 
 
@@ -29,11 +31,25 @@ class HatuiApp:
 
         spec = self.loader.load_spec(self.spec_path)
         theme = self.loader.load_theme(spec)
+        initial_state = self.loader.load_state(spec)
+        router_spec = self.loader.load_router(spec)
         screen = self.loader.load_screen(spec)
         providers = self.loader.load_providers(spec)
+        self.store = Store(initial_state=initial_state)
+        self.router = Router(
+            routes=list(router_spec.get("routes", []) or []),
+            initial=router_spec.get("initial"),
+        )
 
-        self.root_widget = RootWidget("root", children=[screen], theme=theme)
+        self.root_widget = RootWidget(
+            "root",
+            children=[screen],
+            theme=theme,
+            store=self.store,
+            router=self.router,
+        )
         self.root_widget.focus_first(self.root_widget.context)
+        self.root_widget._sync_focus(self.root_widget.context)
         self.provider_manager = ProviderManager(providers)
 
         width, height = self._get_terminal_size()
@@ -87,6 +103,7 @@ class HatuiApp:
         context.widget_height = self.screen_buffer.height
         self.provider_manager.update(context.delta_time, context)
         self.root_widget.update(context.delta_time, context)
+        self.root_widget._sync_focus(context)
         self._last_frame_time = now
 
 

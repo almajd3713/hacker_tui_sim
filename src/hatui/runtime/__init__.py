@@ -5,11 +5,15 @@ from hatui.runtime.formatters import apply_formatter
 from hatui.runtime.loader import ScreenSpecLoader
 from hatui.runtime.provider_manager import ProviderManager
 from hatui.runtime.registries import ProviderRegistry, WidgetRegistry
+from hatui.runtime.router import Router
+from hatui.runtime.store import Store
 
 __all__ = [
     "ProviderManager",
     "ProviderRegistry",
+    "Router",
     "ScreenSpecLoader",
+    "Store",
     "WidgetRegistry",
     "apply_formatter",
     "resolve_path",

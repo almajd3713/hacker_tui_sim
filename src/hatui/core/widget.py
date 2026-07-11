@@ -140,6 +140,20 @@ class Widget(ABC):
             return bool(root.focus_last(context))
         if action == "focus_widget" and hasattr(root, "focus_widget"):
             return bool(root.focus_widget(payload.get("target"), context))
+        if action == "route_set" and hasattr(root, "route_set"):
+            return bool(root.route_set(payload.get("route"), context))
+        if action == "route_next" and hasattr(root, "route_next"):
+            return bool(root.route_next(context))
+        if action == "route_prev" and hasattr(root, "route_prev"):
+            return bool(root.route_prev(context))
+        if action == "route_push" and hasattr(root, "route_push"):
+            return bool(root.route_push(payload.get("route"), context))
+        if action == "route_pop" and hasattr(root, "route_pop"):
+            return bool(root.route_pop(context))
+        if action == "store_set" and hasattr(root, "store_set"):
+            return bool(root.store_set(payload.get("path"), payload.get("value"), context))
+        if action == "store_toggle" and hasattr(root, "store_toggle"):
+            return bool(root.store_toggle(payload.get("path"), context))
         return self.handle_action(action, payload, context)
 
     def handle_action(self, action: str, payload: dict[str, Any], context: Context) -> bool:

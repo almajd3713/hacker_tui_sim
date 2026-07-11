@@ -90,10 +90,11 @@ def _build_tabs(spec: dict, loader):
     tabs = []
     for tab_spec in spec.get("tabs", []):
         title = tab_spec["title"]
+        route = tab_spec.get("route", title.lower())
         child_spec = tab_spec.get("child") or tab_spec.get("screen")
         if child_spec is None:
             raise ValueError("Tab spec requires 'child' or 'screen'")
-        tabs.append((title, loader.build_widget(child_spec)))
+        tabs.append((title, loader.build_widget(child_spec), route))
     kwargs = _clean(spec, {"type", "weight", "tabs", *GENERIC_WIDGET_KEYS})
     return TabsWidget(tabs=tabs, **kwargs)
 

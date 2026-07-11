@@ -1,5 +1,6 @@
 from hatui.core.style import Style, resolve_style
 from hatui.core.widget import Widget, WidgetContext
+from hatui.runtime.bindings import resolve_path
 
 
 class TabsWidget(Widget):
@@ -8,15 +9,16 @@ class TabsWidget(Widget):
     def __init__(
         self,
         name: str,
-        tabs: list[tuple[str, Widget]],
+        tabs: list[tuple[str, Widget, str]],
         show_tabs: bool = True,
         active_index: int = 0,
         fg_color: str | None = None,
         bg_color: str | None = None,
         active_fg_color: str | None = None,
         active_bg_color: str | None = None,
+        route_key: str | None = None,
     ):
-        children = [widget for _, widget in tabs]
+        children = [widget for _, widget, _ in tabs]
         super().__init__(name, children)
         self.tabs = tabs
         self.show_tabs = show_tabs
@@ -24,6 +26,7 @@ class TabsWidget(Widget):
         self.bg_color = bg_color
         self.active_fg_color = active_fg_color
         self.active_bg_color = active_bg_color
+        self.route_key = route_key
         self.state["active_index"] = max(0, min(active_index, len(tabs) - 1)) if tabs else 0
 
     @property
@@ -36,6 +39,7 @@ class TabsWidget(Widget):
             "bg_color": str,
             "active_fg_color": str,
             "active_bg_color": str,
+            "route_key": str,
         }
 
     @property
@@ -48,6 +52,12 @@ class TabsWidget(Widget):
             return None
         return self.children[self.active_index]
 
+    @property
+    def active_route(self) -> str | None:
+        if not self.tabs or self.active_index >= len(self.tabs):
+            return None
+        return self._tab_route_name(self.active_index)
+
     def default_focusable(self) -> bool:
         return True
 
@@ -57,41 +67,66 @@ class TabsWidget(Widget):
             {"key": "right", "action": "activate_next"},
         ]
 
-    def next_tab(self):
+    def next_tab(self, context: WidgetContext | None = None):
         if self.children:
-            self.state["active_index"] = (self.active_index + 1) % len(self.children)
+            self._set_active_index((self.active_index + 1) % len(self.children), context)
 
-    def previous_tab(self):
+    def previous_tab(self, context: WidgetContext | None = None):
         if self.children:
-            self.state["active_index"] = (self.active_index - 1) % len(self.children)
+            self._set_active_index((self.active_index - 1) % len(self.children), context)
+
+    def _tab_route_name(self, index: int) -> str:
+        _, _, route = self.tabs[index]
+        return route
+
+    def _set_active_index(self, index: int, context: WidgetContext | None = None):
+        if not self.children:
+            return
+        index = max(0, min(index, len(self.children) - 1))
+        self.state["active_index"] = index
+        route = self._tab_route_name(index)
+        if self.route_key is not None and context is not None:
+            self.root.perform_action("store_set", {"path": self.route_key, "value": route}, context)
+        elif context is not None:
+            self.root.perform_action("route_set", {"route": route}, context)
 
     def handle_action(self, action: str, payload: dict, context: WidgetContext) -> bool:
         if action == "activate_next":
-            self.next_tab()
+            self.next_tab(context)
             return True
         if action == "activate_prev":
-            self.previous_tab()
+            self.previous_tab(context)
             return True
         if action == "activate_index":
             index = int(payload.get("index", self.active_index))
             if not self.children:
                 return False
-            self.state["active_index"] = max(0, min(index, len(self.children) - 1))
+            self._set_active_index(index, context)
             return True
         return False
 
     def interaction_children(self) -> list[Widget]:
         return [self.active_child] if self.active_child is not None else []
 
+    def update(self, delta_time: float, context: WidgetContext):
+        routes = {index: route for index, (_, _, route) in enumerate(self.tabs)}
+        self.state["routes"] = routes
+        if self.route_key is not None:
+            route = resolve_path(context.data, self.route_key, None)
+        else:
+            route = resolve_path(context.data, "_router.current", None)
+        if route:
+            route_names = list(routes.values())
+            if route in route_names:
+                self.state["active_index"] = route_names.index(route)
+        if self.active_child is not None:
+            self.active_child.update(delta_time, context)
+
     def allocate_children(self, width: int, height: int):
         if not self.active_child:
             return
         tab_bar_height = 1 if self.show_tabs and height > 0 else 0
         self.active_child.allocate(width, max(height - tab_bar_height, 0))
-
-    def update(self, delta_time: float, context: WidgetContext):
-        if self.active_child is not None:
-            self.active_child.update(delta_time, context)
 
     def layout_children(self, x: int, y: int, context: WidgetContext):
         if not self.active_child:
@@ -131,7 +166,7 @@ class TabsWidget(Widget):
                 buffer.write(rect.x + x, rect.y, " ", base_style.fg_color, base_style.bg_color)
 
             cursor_x = rect.x
-            for index, (title, _) in enumerate(self.tabs):
+            for index, (title, _, _) in enumerate(self.tabs):
                 label = f"[{title}]" if index == self.active_index else f" {title} "
                 style = active_style if index == self.active_index else base_style
                 clipped = label[: max(rect.x + rect.width - cursor_x, 0)]

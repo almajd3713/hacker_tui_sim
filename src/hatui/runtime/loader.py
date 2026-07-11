@@ -27,6 +27,20 @@ class ScreenSpecLoader:
             text=TextTheme(**text_spec),
         )
 
+    def load_state(self, spec: dict[str, Any]) -> dict[str, Any]:
+        state = spec.get("state", {})
+        if not isinstance(state, dict):
+            raise ValueError("Top-level 'state' must be an object")
+        return state
+
+    def load_router(self, spec: dict[str, Any]) -> dict[str, Any]:
+        router = spec.get("router", {})
+        if router is None:
+            return {}
+        if not isinstance(router, dict):
+            raise ValueError("Top-level 'router' must be an object")
+        return router
+
     def load_providers(self, spec: dict[str, Any]) -> list[Any]:
         providers = []
         for provider_spec in spec.get("providers", []):

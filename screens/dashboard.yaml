@@ -9,6 +9,17 @@ theme:
     bg_color: default
     font_name: JetBrains Mono
 
+state:
+  flags:
+    compact_mode: false
+
+router:
+  routes:
+    - overview
+    - forensics
+    - logs
+  initial: overview
+
 providers:
   - type: clock
     name: clock
@@ -361,6 +372,14 @@ providers:
           template: "focus {value}"
         fg_color: "#ffd166"
       - text:
+          path: _router.current
+          template: "route {value}"
+        fg_color: "#ff8fab"
+      - text:
+          path: state.flags.compact_mode
+          template: "compact {value}"
+        fg_color: "#9e8be0"
+      - text:
           path: runtime.frame.frame
           formatter:
             name: fixed
@@ -383,7 +402,7 @@ providers:
         fg_color: "#cbb7ff"
       - text: "tab focus"
         fg_color: "#9e8be0"
-      - text: "1-3 screens"
+      - text: "1-3 screens / m toggle"
         fg_color: "#9e8be0"
 
 screen:
@@ -394,19 +413,24 @@ screen:
   focus_bg_color: "#1d2533"
   keybindings:
     - key: "1"
-      action: activate_index
+      action: route_set
       payload:
-        index: 0
+        route: overview
     - key: "2"
-      action: activate_index
+      action: route_set
       payload:
-        index: 1
+        route: forensics
     - key: "3"
-      action: activate_index
+      action: route_set
       payload:
-        index: 2
+        route: logs
+    - key: m
+      action: store_toggle
+      payload:
+        path: flags.compact_mode
   tabs:
     - title: Overview
+      route: overview
       child:
         type: column
         name: overview_screen
@@ -555,6 +579,7 @@ screen:
             weight: 1
 
     - title: Forensics
+      route: forensics
       child:
         type: column
         name: forensics_screen
@@ -625,6 +650,7 @@ screen:
             weight: 1
 
     - title: Logs
+      route: logs
       child:
         type: column
         name: logs_screen
