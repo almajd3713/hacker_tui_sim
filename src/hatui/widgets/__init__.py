@@ -21,6 +21,7 @@ from hatui.widgets.sparkline_widget import SparklineWidget
 from hatui.widgets.status_strip_widget import StatusStripWidget
 from hatui.widgets.stat_widget import StatWidget
 from hatui.widgets.table_widget import TableWidget
+from hatui.widgets.tabs_widget import TabsWidget
 from hatui.widgets.text_widget import TextWidget
 
 __all__ = [
@@ -45,5 +46,6 @@ __all__ = [
     "StatusStripWidget",
     "StatWidget",
     "TableWidget",
+    "TabsWidget",
     "TextWidget",
 ]

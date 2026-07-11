@@ -57,9 +57,9 @@ class ScreenBuffer:
         """
         Flush the screen buffer to the terminal.
         """
-        lines = []
-        for row in self.buffer:
-            line = []
+        segments = ["\033[H"]
+        for row_index, row in enumerate(self.buffer):
+            line = [f"\033[{row_index + 1};1H"]
             active_style = None
             for cell in row:
                 style = ansi_sequence(cell.style)
@@ -68,8 +68,8 @@ class ScreenBuffer:
                     active_style = style
                 line.append(cell.char)
             line.append("\033[0m")
-            lines.append("".join(line))
+            segments.append("".join(line))
 
-        frame = "\033[H" + "\n".join(lines) + "\033[0m"
+        frame = "".join(segments) + "\033[0m"
         sys.stdout.write(frame)
         sys.stdout.flush()

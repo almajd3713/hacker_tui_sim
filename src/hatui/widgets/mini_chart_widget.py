@@ -59,10 +59,16 @@ class MiniChartWidget(Widget):
                 bg_color=context.theme.text.bg_color,
             ),
         )
-        maximum = max(values) if values else 1
-        maximum = maximum if maximum > 0 else 1
-        for index, value in enumerate(values):
-            height = int(round((value / maximum) * rect.height))
+        minimum = min(values)
+        maximum = max(values)
+        span = maximum - minimum
+        if span <= 0:
+            normalized_values = [1.0 for _ in values]
+        else:
+            normalized_values = [(value - minimum) / span for value in values]
+
+        for index, normalized in enumerate(normalized_values):
+            column_height = max(1, int(round(normalized * rect.height)))
             for y in range(rect.height):
-                char = self.fill_char if rect.height - y <= height else " "
+                char = self.fill_char if rect.height - y <= column_height else " "
                 buffer.write(rect.x + index, rect.y + y, char, style.fg_color, style.bg_color)

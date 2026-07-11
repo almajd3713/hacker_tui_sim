@@ -56,8 +56,8 @@ class BoxWidget(BorderWidget):
         title = self.state.get("title", "")
         if not title or width <= 0:
             return ""
-        available = max(width - 2, 0)
-        titled = f" {title} "[:available]
+        available = max(width - 4, 0)
+        titled = f" {title[:available]} "
         return titled
 
     def _title_x(self, rect_width: int, title: str, rect_x: int) -> int:

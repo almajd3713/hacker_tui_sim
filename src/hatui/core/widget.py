@@ -54,7 +54,12 @@ class Widget(ABC):
             rect=WidgetRect(x=0, y=0, width=0, height=0)
         )
         self.state = {}
+        self.layout_weight = 1
         self.children: List[Widget] = children if children is not None else []
+
+    def set_layout_weight(self, weight: int | float):
+        self.layout_weight = max(float(weight), 0.0)
+        return self
     
     def allocate(self, width: int, height: int):
         """

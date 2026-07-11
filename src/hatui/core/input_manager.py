@@ -1,6 +1,8 @@
-
 from dataclasses import dataclass
 from typing import Callable, List
+import os
+import select
+import sys
 
 
 @dataclass
@@ -23,29 +25,52 @@ class InputManager:
             if event.event_type == event_type and event.key == key and event.modifiers == modifiers:
                 event.callback()
 
+    def _read_ready_chars(self, fd: int, timeout: float, settle_timeout: float = 0.01) -> str:
+        chars = []
+        ready, _, _ = select.select([fd], [], [], timeout)
+        while ready:
+            chars.append(os.read(fd, 32).decode(errors="ignore"))
+            ready, _, _ = select.select([fd], [], [], settle_timeout)
+        return "".join(chars)
+
+    def _parse_key(self, raw: str) -> tuple[str, list]:
+        if raw == "\x03":
+            raise KeyboardInterrupt("Ctrl+C pressed")
+
+        arrow_map = {
+            "\x1b[A": "up",
+            "\x1b[B": "down",
+            "\x1b[C": "right",
+            "\x1b[D": "left",
+            "\x1bOA": "up",
+            "\x1bOB": "down",
+            "\x1bOC": "right",
+            "\x1bOD": "left",
+        }
+        if raw in arrow_map:
+            return arrow_map[raw], ["arrow"]
+
+        if raw.startswith("\x1b"):
+            return "escape", []
+
+        modifiers = []
+        if raw.isalpha() and raw.isupper():
+            modifiers.append("shift")
+        return raw.lower(), modifiers
+
     def poll_input(self, timeout: float = 0.05) -> None:
         """
         Polls stdin for a single character without blocking indefinitely.
         Returns the character if available, or None if the timeout is reached.
         """
-        import sys
-        import select
-
         fd = sys.stdin.fileno()
         ready, _, _ = select.select([fd], [], [], timeout)
-        
-        if ready:
-            char = sys.stdin.read(1)
-            # If you are using setraw and want to handle Ctrl+C manually:
-            if char == '\x03':
-                raise KeyboardInterrupt("Ctrl+C pressed")
-            # Modifiers
-            modifiers = []
-            if char.isupper():
-                modifiers.append('shift')
-            if char in ['\x1b[A', '\x1b[B', '\x1b[C', '\x1b[D']:
-                modifiers.append('arrow')
-            if char in ['\x1b', '\x1b[', '\x1b[1;5A', '\x1b[1;5B', '\x1b[1;5C', '\x1b[1;5D']:
-                modifiers.append('ctrl')
-            # Emit the event for the character read
-            self.emit_event('keypress', char.lower(), modifiers)
+        if not ready:
+            return
+
+        first = os.read(fd, 1).decode(errors="ignore")
+        raw = first
+        if first == "\x1b":
+            raw += self._read_ready_chars(fd, 0.02, settle_timeout=0.005)
+        key, modifiers = self._parse_key(raw)
+        self.emit_event("keypress", key, modifiers)

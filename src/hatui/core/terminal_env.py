@@ -30,7 +30,7 @@ class TerminalEnvironment:
             import termios
             fd = sys.stdin.fileno()
             self.original_stdin_attrs = termios.tcgetattr(fd)
-            tty.setcbreak(fd=fd)
+            tty.setraw(fd)
         else:
             import msvcrt
             # On Windows, msvcrt handles raw input implicitly for the most part, 
