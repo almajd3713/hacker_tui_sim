@@ -9,8 +9,8 @@ from hatui.widgets.text_widget import TextWidget
 
 class HatuiApp:
     def __init__(self):
-        self.root_widget = RootWidget(name="root", children=[
-            TextWidget(name="text1", text="Hello, World!"),
+        self.root_widget = RootWidget("root", children=[
+            TextWidget("text1", text="Hello, World!")
         ])
 
         width, height = self._get_terminal_size()

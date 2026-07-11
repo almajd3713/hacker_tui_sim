@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import List, Dict
 
 from hatui.core.screen_buffer import ScreenBuffer
+from hatui.core.style import Theme
 
 from .context import Context, Constraints
 
@@ -14,6 +15,7 @@ class WidgetContext:
     """
     name: str
     version: str
+    theme: Theme = Theme()
     
     # Terminal properties
     widget_width: int = None

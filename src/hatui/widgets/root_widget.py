@@ -1,4 +1,5 @@
 from hatui.core.widget import Widget, WidgetContext
+from hatui.core.style import Theme
 
 class RootWidget(Widget):
     """
@@ -6,9 +7,9 @@ class RootWidget(Widget):
     It serves as the entry point for rendering and managing the entire widget tree.
     It has a single child widget, which is the main content of the application.
     """
-    def __init__(self, name: str, children: list = None):
+    def __init__(self, name: str, children: list = None, theme: Theme | None = None):
         super().__init__(name, children)
-        self.context = WidgetContext(name=name, version="1.0.0")
+        self.context = WidgetContext(name=name, version="1.0.0", theme=theme or Theme())
     
     @property
     def _schema(self):
