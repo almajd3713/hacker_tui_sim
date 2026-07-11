@@ -1,4 +1,5 @@
 import sys
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 
 from hatui.core.style import Style, ansi_sequence
@@ -20,6 +21,7 @@ class ScreenBuffer:
         self.width = width
         self.height = height
         self.buffer = [[Cell() for _ in range(width)] for _ in range(height)]
+        self._clip_stack: list[tuple[int, int, int, int]] = []
 
     def resize(self, width: int, height: int):
         """
@@ -28,6 +30,7 @@ class ScreenBuffer:
         self.width = width
         self.height = height
         self.buffer = [[Cell() for _ in range(width)] for _ in range(height)]
+        self._clip_stack.clear()
 
     def clear(self):
         """
@@ -36,15 +39,54 @@ class ScreenBuffer:
         for y in range(self.height):
             for x in range(self.width):
                 self.buffer[y][x] = Cell()
+
+    def _normalized_clip(self, x: int, y: int, width: int, height: int) -> tuple[int, int, int, int]:
+        left = max(x, 0)
+        top = max(y, 0)
+        right = min(x + max(width, 0), self.width)
+        bottom = min(y + max(height, 0), self.height)
+        if right < left:
+            right = left
+        if bottom < top:
+            bottom = top
+        return left, top, right, bottom
+
+    def push_clip(self, x: int, y: int, width: int, height: int):
+        clip = self._normalized_clip(x, y, width, height)
+        if self._clip_stack:
+            left, top, right, bottom = self._clip_stack[-1]
+            clip = (
+                max(clip[0], left),
+                max(clip[1], top),
+                min(clip[2], right),
+                min(clip[3], bottom),
+            )
+        self._clip_stack.append(clip)
+
+    def pop_clip(self):
+        if self._clip_stack:
+            self._clip_stack.pop()
+
+    @contextmanager
+    def clip(self, x: int, y: int, width: int, height: int):
+        self.push_clip(x, y, width, height)
+        try:
+            yield
+        finally:
+            self.pop_clip()
+
+    def _within_clip(self, x: int, y: int) -> bool:
+        if not self._clip_stack:
+            return True
+        left, top, right, bottom = self._clip_stack[-1]
+        return left <= x < right and top <= y < bottom
     
     def write(self, x: int, y: int, char: str, fg_color: str = 'default', bg_color: str = 'default'):
         """
         Write a character to the screen buffer at the specified coordinates.
         """
-        if 0 <= x < self.width and 0 <= y < self.height:
+        if 0 <= x < self.width and 0 <= y < self.height and self._within_clip(x, y):
             self.buffer[y][x] = Cell(char, Style(fg_color=fg_color, bg_color=bg_color))
-        else:
-            raise ValueError(f"Coordinates ({x}, {y}) are out of bounds for buffer size ({self.width}, {self.height}).")
 
     def write_text(self, x: int, y: int, text: str, fg_color: str = 'default', bg_color: str = 'default'):
         """

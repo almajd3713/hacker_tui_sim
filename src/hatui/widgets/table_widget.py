@@ -82,6 +82,10 @@ class TableWidget(Widget):
             return text.center(width)
         return text.ljust(width)
 
+    def measure_content(self, width: int, height: int) -> tuple[int, int]:
+        header_rows = 1 if self.show_header else 0
+        return max(width, 0), max(len(self.state.get("rows", [])) + header_rows, height, 0)
+
     def paint(self, buffer, context: WidgetContext):
         rect = self.properties["rect"]
         if rect.width <= 0 or rect.height <= 0 or not self.columns:

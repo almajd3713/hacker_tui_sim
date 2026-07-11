@@ -68,6 +68,10 @@ class ParagraphWidget(Widget):
             lines.extend(textwrap.wrap(paragraph, width=width, drop_whitespace=False) or [""])
         return lines
 
+    def measure_content(self, width: int, height: int) -> tuple[int, int]:
+        lines = self._wrapped_lines(width)
+        return max(width, 0), max(len(lines), height, 0)
+
     def paint(self, buffer, context: WidgetContext):
         rect = self.properties["rect"]
         if rect.width <= 0 or rect.height <= 0:

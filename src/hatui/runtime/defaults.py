@@ -40,6 +40,7 @@ from hatui.widgets import (
     ParagraphWidget,
     ProgressBarWidget,
     RowWidget,
+    ScrollWidget,
     SparklineWidget,
     StatusStripWidget,
     StatWidget,
@@ -112,6 +113,7 @@ def create_widget_registry() -> WidgetRegistry:
     registry.register("box", lambda spec, loader: _build_single_child(spec, loader, BoxWidget))
     registry.register("border", lambda spec, loader: _build_single_child(spec, loader, BorderWidget))
     registry.register("center", _build_center)
+    registry.register("scroll", lambda spec, loader: _build_single_child(spec, loader, ScrollWidget))
 
     registry.register("text", lambda spec, loader: _build_plain(spec, loader, TextWidget))
     registry.register("label", lambda spec, loader: _build_plain(spec, loader, LabelWidget))

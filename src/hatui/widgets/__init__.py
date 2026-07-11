@@ -17,6 +17,7 @@ from hatui.widgets.paragraph_widget import ParagraphWidget
 from hatui.widgets.progress_bar_widget import ProgressBarWidget
 from hatui.widgets.root_widget import RootWidget
 from hatui.widgets.row_widget import RowWidget
+from hatui.widgets.scroll_widget import ScrollWidget
 from hatui.widgets.sparkline_widget import SparklineWidget
 from hatui.widgets.status_strip_widget import StatusStripWidget
 from hatui.widgets.stat_widget import StatWidget
@@ -42,6 +43,7 @@ __all__ = [
     "ProgressBarWidget",
     "RootWidget",
     "RowWidget",
+    "ScrollWidget",
     "SparklineWidget",
     "StatusStripWidget",
     "StatWidget",

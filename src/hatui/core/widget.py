@@ -180,6 +180,9 @@ class Widget(ABC):
         for child in self.children:
             child.update(delta_time, context)
 
+    def measure_content(self, width: int, height: int) -> tuple[int, int]:
+        return max(width, 0), max(height, 0)
+
     def handle_input(self, key: str, modifiers: list[str], context: Context) -> bool:
         return False
     

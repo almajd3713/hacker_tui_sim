@@ -53,12 +53,22 @@ providers:
   - type: constant
     name: overview_text
     target: ui.overview_text
-    value: Monitoring compute load, uplink stability, and packet bursts. This screen is loaded from YAML and fed by generic providers through dotted-path bindings.
+    value: |-
+      Monitoring compute load, uplink stability, and packet bursts. This screen is loaded from YAML and fed by generic providers through dotted-path bindings.
+
+      The overview panel is now wrapped in a generic scroll viewport, so long-form operator notes can exceed the visible panel height without leaking into adjacent widgets.
+
+      Use focus traversal to land on the scroll region, then use arrow keys or j/k to move through the content.
 
   - type: constant
     name: logs_note
     target: ui.logs_note
-    value: The log view is isolated in its own tab so providers can keep pushing events without forcing every screen to show them.
+    value: |-
+      The log view is isolated in its own tab so providers can keep pushing events without forcing every screen to show them.
+
+      The note panel is also scrollable now, which gives us a bounded place for long-form operator guidance, incident notes, or task checklists.
+
+      Focus the viewport and use arrow keys or j/k to move through the text.
 
   - type: constant
     name: hex_dump
@@ -327,6 +337,34 @@ providers:
             precision: 0
         loss: 0.3%
         state: warming
+      - relay: r-06
+        latency: 412ms
+        loss: 0.7%
+        state: retry
+      - relay: r-07
+        latency: 388ms
+        loss: 0.0%
+        state: stable
+      - relay: r-08
+        latency: 501ms
+        loss: 1.2%
+        state: degraded
+      - relay: r-09
+        latency: 274ms
+        loss: 0.2%
+        state: stable
+      - relay: r-10
+        latency: 629ms
+        loss: 2.8%
+        state: probing
+      - relay: r-11
+        latency: 341ms
+        loss: 0.1%
+        state: stable
+      - relay: r-12
+        latency: 455ms
+        loss: 0.6%
+        state: syncing
 
   - type: template
     name: code_block
@@ -402,7 +440,7 @@ providers:
         fg_color: "#cbb7ff"
       - text: "tab focus"
         fg_color: "#9e8be0"
-      - text: "1-3 screens / m toggle"
+      - text: "1-3 screens / m toggle / arrows scroll"
         fg_color: "#9e8be0"
 
 screen:
@@ -518,11 +556,15 @@ screen:
                   type: column
                   name: overview_column
                   children:
-                    - type: paragraph
-                      name: overview_text
-                      text_key: ui.overview_text
-                      fg_color: "#f2f2f7"
+                    - type: scroll
+                      name: overview_text_scroll
+                      focus_fg_color: "#59d0ff"
                       weight: 3
+                      child:
+                        type: paragraph
+                        name: overview_text
+                        text_key: ui.overview_text
+                        fg_color: "#f2f2f7"
                     - type: alert
                       name: overview_alert
                       message_key: alerts.message
@@ -634,15 +676,19 @@ screen:
                   focus_fg_color: "#59d0ff"
                   weight: 2
                   child:
-                    type: table
-                    name: relay_table
-                    rows_key: panels.relay_rows
-                    header_color: "#f2f2f7"
-                    columns:
-                      - {title: relay, key: relay, width: 8}
-                      - {title: lat, key: latency, width: 7, align: right}
-                      - {title: loss, key: loss, width: 6, align: right}
-                      - {title: state, key: state}
+                    type: scroll
+                    name: relay_table_scroll
+                    focus_fg_color: "#59d0ff"
+                    child:
+                      type: table
+                      name: relay_table
+                      rows_key: panels.relay_rows
+                      header_color: "#f2f2f7"
+                      columns:
+                        - {title: relay, key: relay, width: 8}
+                        - {title: lat, key: latency, width: 7, align: right}
+                        - {title: loss, key: loss, width: 6, align: right}
+                        - {title: state, key: state}
           - type: status_strip
             name: forensics_status_strip
             segments_key: ui.status_strip
@@ -663,11 +709,15 @@ screen:
             focus_fg_color: "#59d0ff"
             weight: 8
             child:
-              type: log
-              name: log_widget
-              lines_key: logs.main
-              max_lines: 80
-              show_timestamp: true
+              type: scroll
+              name: log_scroll
+              focus_fg_color: "#59d0ff"
+              child:
+                type: log
+                name: log_widget
+                lines_key: logs.main
+                max_lines: 80
+                show_timestamp: true
           - type: box
             name: status_box
             title: operator note
@@ -676,9 +726,13 @@ screen:
             focus_fg_color: "#59d0ff"
             weight: 2
             child:
-              type: paragraph
-              name: logs_note
-              text_key: ui.logs_note
+              type: scroll
+              name: logs_note_scroll
+              focus_fg_color: "#59d0ff"
+              child:
+                type: paragraph
+                name: logs_note
+                text_key: ui.logs_note
           - type: status_strip
             name: logs_status_strip
             segments_key: ui.status_strip

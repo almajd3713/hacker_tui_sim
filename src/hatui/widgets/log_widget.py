@@ -66,6 +66,9 @@ class LogWidget(Widget):
             return text, self.LEVEL_COLORS.get(level)
         return str(entry), None
 
+    def measure_content(self, width: int, height: int) -> tuple[int, int]:
+        return max(width, 0), max(len(self.state.get("lines", [])), height, 0)
+
     def paint(self, buffer, context: WidgetContext):
         rect = self.properties["rect"]
         if rect.width <= 0 or rect.height <= 0:
