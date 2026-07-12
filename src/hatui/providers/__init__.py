@@ -20,6 +20,8 @@ from hatui.providers.builtins import (
     TemplateProvider,
     TransformProvider,
     WaveformProvider,
+    EventStreamProvider,
+    GridHistoryProvider
 )
 
 __all__ = [
@@ -29,8 +31,10 @@ __all__ = [
     "ConstantProvider",
     "DemoLogsProvider",
     "EnvProvider",
+    "EventStreamProvider",
     "FileProvider",
     "FrameProvider",
+    "GridHistoryProvider",
     "HostInfoProvider",
     "HttpJsonProvider",
     "Provider",

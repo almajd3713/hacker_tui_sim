@@ -268,3 +268,51 @@ class ThresholdProvider(Provider):
         else:
             matched = actual > compare
         return self.spec.get("true") if matched else self.spec.get("false")
+
+class EventStreamProvider(Provider):
+    def setup(self, context):
+        self.events: list[dict] = []
+
+    def provide(self, delta_time: float, context):
+        payload = self.spec.get("item")
+        if payload is not None:
+            value = resolve_mapping(payload, context.data, string_mode="literal_fallback")
+            items = [value]
+        else:
+            source = resolve_value_spec(
+                {"source": self.spec.get("source"), "default": self.spec.get("default")},
+                context.data,
+            )
+            if isinstance(source, list):
+                items = [item for item in source if isinstance(item, dict)]
+            elif isinstance(source, dict):
+                items = [source]
+            else:
+                items = []
+
+        for item in items:
+            event = dict(item)
+            event.setdefault("timestamp", time.strftime("%H:%M:%S", time.localtime()))
+            self.events.append(event)
+        self.events = self.events[-int(self.spec.get("max_items", 80)) :]
+        return list(self.events)
+
+
+class GridHistoryProvider(Provider):
+    def setup(self, context):
+        self.rows: list[list[float]] = []
+
+    def provide(self, delta_time: float, context):
+        row = resolve_value_spec(
+            {"source": self.spec.get("source"), "default": self.spec.get("default", [])},
+            context.data,
+        )
+        if isinstance(row, dict):
+            values = list(row.values())
+        elif isinstance(row, list):
+            values = row
+        else:
+            values = [row]
+        self.rows.append(list(values))
+        self.rows = self.rows[-int(self.spec.get("size", 16)) :]
+        return list(self.rows)

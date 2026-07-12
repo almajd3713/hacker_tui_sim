@@ -6,9 +6,16 @@ from hatui.widgets.box_widget import BoxWidget
 from hatui.widgets.border_widget import BorderWidget
 from hatui.widgets.center_widget import CenterWidget
 from hatui.widgets.code_block_widget import CodeBlockWidget
+from hatui.widgets.chart_widget import ChartWidget
 from hatui.widgets.column_widget import ColumnWidget
 from hatui.widgets.divider_widget import DividerWidget
+from hatui.widgets.diff_viewer_widget import DiffViewerWidget
+from hatui.widgets.event_feed_widget import EventFeedWidget
+from hatui.widgets.flow_widget import FlowWidget
+from hatui.widgets.gauge_widget import GaugeWidget
+from hatui.widgets.heatmap_widget import HeatmapWidget
 from hatui.widgets.hex_dump_widget import HexDumpWidget
+from hatui.widgets.inspector_widget import InspectorWidget
 from hatui.widgets.label_widget import LabelWidget
 from hatui.widgets.log_widget import LogWidget
 from hatui.widgets.menu_widget import MenuWidget
@@ -27,6 +34,7 @@ from hatui.widgets.stat_widget import StatWidget
 from hatui.widgets.table_widget import TableWidget
 from hatui.widgets.tabs_widget import TabsWidget
 from hatui.widgets.text_widget import TextWidget
+from hatui.widgets.timeline_widget import TimelineWidget
 from hatui.widgets.list_widget import ListWidget
 
 __all__ = [
@@ -35,10 +43,17 @@ __all__ = [
     "BoxWidget",
     "BorderWidget",
     "CenterWidget",
+    "ChartWidget",
     "CodeBlockWidget",
     "ColumnWidget",
     "DividerWidget",
+    "DiffViewerWidget",
+    "EventFeedWidget",
+    "FlowWidget",
+    "GaugeWidget",
+    "HeatmapWidget",
     "HexDumpWidget",
+    "InspectorWidget",
     "LabelWidget",
     "ListWidget",
     "LogWidget",
@@ -58,4 +73,5 @@ __all__ = [
     "TableWidget",
     "TabsWidget",
     "TextWidget",
+    "TimelineWidget",
 ]

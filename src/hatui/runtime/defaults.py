@@ -9,8 +9,10 @@ from hatui.providers import (
     ConstantProvider,
     DemoLogsProvider,
     EnvProvider,
+    EventStreamProvider,
     FileProvider,
     FrameProvider,
+    GridHistoryProvider,
     HostInfoProvider,
     HttpJsonProvider,
     RandomProvider,
@@ -29,10 +31,17 @@ from hatui.widgets import (
     BorderWidget,
     BoxWidget,
     CenterWidget,
+    ChartWidget,
     CodeBlockWidget,
     ColumnWidget,
     DividerWidget,
+    DiffViewerWidget,
+    EventFeedWidget,
+    FlowWidget,
+    GaugeWidget,
+    HeatmapWidget,
     HexDumpWidget,
+    InspectorWidget,
     LabelWidget,
     ListWidget,
     LogWidget,
@@ -51,6 +60,7 @@ from hatui.widgets import (
     TableWidget,
     TabsWidget,
     TextWidget,
+    TimelineWidget,
 )
 
 GENERIC_WIDGET_KEYS = {"focusable", "selectable", "focus_fg_color", "focus_bg_color", "keybindings"}
@@ -149,6 +159,16 @@ def create_widget_registry() -> WidgetRegistry:
     registry.register("sparkline", lambda spec, loader: _build_plain(spec, loader, SparklineWidget))
     registry.register("mini_chart", lambda spec, loader: _build_plain(spec, loader, MiniChartWidget))
     registry.register("metric_grid", lambda spec, loader: _build_plain(spec, loader, MetricGridWidget))
+    registry.register("line_chart", lambda spec, loader: _build_plain({**spec, "mode": "line"}, loader, ChartWidget))
+    registry.register("area_chart", lambda spec, loader: _build_plain({**spec, "mode": "area"}, loader, ChartWidget))
+    registry.register("bar_chart", lambda spec, loader: _build_plain({**spec, "mode": "bar"}, loader, ChartWidget))
+    registry.register("gauge", lambda spec, loader: _build_plain(spec, loader, GaugeWidget))
+    registry.register("heatmap", lambda spec, loader: _build_plain(spec, loader, HeatmapWidget))
+    registry.register("timeline", lambda spec, loader: _build_plain(spec, loader, TimelineWidget))
+    registry.register("event_feed", lambda spec, loader: _build_plain(spec, loader, EventFeedWidget))
+    registry.register("inspector", lambda spec, loader: _build_plain(spec, loader, InspectorWidget))
+    registry.register("diff_viewer", lambda spec, loader: _build_plain(spec, loader, DiffViewerWidget))
+    registry.register("flow", lambda spec, loader: _build_plain(spec, loader, FlowWidget))
 
     registry.register("log", lambda spec, loader: _build_plain(spec, loader, LogWidget))
     registry.register("table", lambda spec, loader: _build_plain(spec, loader, TableWidget))
@@ -178,4 +198,6 @@ def create_provider_registry() -> ProviderRegistry:
     registry.register("records", RecordsProvider)
     registry.register("rolling_window", RollingWindowProvider)
     registry.register("threshold", ThresholdProvider)
+    registry.register("event_stream", EventStreamProvider)
+    registry.register("grid_history", GridHistoryProvider)
     return registry
