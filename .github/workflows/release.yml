@@ -92,6 +92,14 @@ jobs:
       contents: write
 
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Download Python artifacts
         uses: actions/download-artifact@v4
         with:
@@ -103,14 +111,6 @@ jobs:
         with:
           name: windows-exe
           path: release-artifacts
-
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
 
       - name: Generate changelog
         run: |

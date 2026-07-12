@@ -137,7 +137,9 @@ def main() -> None:
     previous_tag = args.previous_tag or find_previous_tag(args.tag)
     commits = collect_commits(args.tag, previous_tag)
     notes = build_release_notes(args.tag, previous_tag, commits, args.repo_url)
-    Path(args.output).write_text(notes, encoding="utf-8")
+    output_path = Path(args.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(notes, encoding="utf-8")
 
     if args.update_changelog:
         update_changelog(Path(args.changelog_path), notes)
