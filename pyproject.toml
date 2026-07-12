@@ -1,13 +1,59 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
 [project]
 name = "hatui"
 version = "0.1.0"
-description = "Add your description here"
+description = "A configurable hacker-style terminal UI toolkit driven by YAML screens, widgets, and providers."
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.10"
 dependencies = ["PyYAML>=6.0"]
+authors = [
+  { name = "almajd3713" },
+]
+keywords = ["tui", "terminal", "dashboard", "yaml", "cli"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: User Interfaces",
+  "Topic :: Terminals",
+]
+
+[project.urls]
+Homepage = "https://github.com/almajd3713/hacker_tui_sim"
+Repository = "https://github.com/almajd3713/hacker_tui_sim"
+Issues = "https://github.com/almajd3713/hacker_tui_sim/issues"
 
 [project.scripts]
 hatui = "hatui.app:main"
+
+[tool.hatch.build]
+include = [
+  "src/hatui/**/*.py",
+  "src/hatui/demo/screens/**/*.yaml",
+  "README.md",
+  "LICENSE",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hatui"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "src/hatui",
+  "README.md",
+  "LICENSE",
+  "pyproject.toml",
+]
 
 [tool.uv]
 package = true

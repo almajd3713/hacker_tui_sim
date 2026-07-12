@@ -7,10 +7,12 @@ import sys
 import time
 from pathlib import Path
 from copy import deepcopy
+from contextlib import nullcontext
 
 from hatui.core.input_manager import InputManager
 from hatui.core.screen_buffer import ScreenBuffer
 from hatui.core.terminal_env import TerminalEnvironment
+from hatui.demo_assets import bundled_demo_spec_path
 from hatui.runtime.defaults import create_provider_registry, create_widget_registry
 from hatui.runtime.bindings import set_path
 from hatui.runtime.loader import ScreenSpecLoader
@@ -371,7 +373,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main():
-    default_spec = Path(__file__).resolve().parents[2] / "screens" / "dashboard.yaml"
     argv = sys.argv[1:]
     if argv and argv[0] not in {"run", "validate", "preview"}:
         argv = ["run", *argv]
@@ -380,32 +381,32 @@ def main():
 
     command = args.command or "run"
     spec_arg = getattr(args, "spec", None)
+    spec_context = nullcontext(Path(spec_arg)) if spec_arg else bundled_demo_spec_path()
 
-    spec_path = Path(spec_arg) if spec_arg else default_spec
+    with spec_context as spec_path:
+        if command == "validate":
+            loader = ScreenSpecLoader(create_widget_registry(), create_provider_registry())
+            messages = loader.validate_spec(spec_path)
+            errors = [message for message in messages if message.level == "error"]
+            if errors:
+                for message in errors:
+                    print(message.format(), file=sys.stderr)
+                raise SystemExit(1)
+            print(f"Valid Hatui spec: {spec_path}")
+            return
 
-    if command == "validate":
-        loader = ScreenSpecLoader(create_widget_registry(), create_provider_registry())
-        messages = loader.validate_spec(spec_path)
-        errors = [message for message in messages if message.level == "error"]
-        if errors:
-            for message in errors:
-                print(message.format(), file=sys.stderr)
-            raise SystemExit(1)
-        print(f"Valid Hatui spec: {spec_path}")
-        return
-
-    app = HatuiApp(spec_path=spec_path, watch=bool(getattr(args, "watch", False)))
-    if command == "preview":
-        print(
-            app.preview(
-                width=max(args.width, 1),
-                height=max(args.height, 1),
-                frames=max(args.frames, 1),
-                route=args.route,
+        app = HatuiApp(spec_path=spec_path, watch=bool(getattr(args, "watch", False)))
+        if command == "preview":
+            print(
+                app.preview(
+                    width=max(args.width, 1),
+                    height=max(args.height, 1),
+                    frames=max(args.frames, 1),
+                    route=args.route,
+                )
             )
-        )
-        return
-    app.run()
+            return
+        app.run()
 
 
 if __name__ == "__main__":
