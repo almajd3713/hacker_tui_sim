@@ -1,0 +1,84 @@
+title: Visuals
+route: visuals
+child:
+  type: column
+  name: visuals_screen
+  children:
+    - type: row
+      name: visuals_charts_row
+      weight: 5
+      children:
+        - type: box
+          name: line_chart_box
+          title: line chart
+          padding: 1
+          weight: 2
+          child:
+            type: line_chart
+            name: link_line_chart
+            series_key: viz.line_chart_series
+            show_scale: true
+        - type: box
+          name: area_chart_box
+          title: area chart
+          padding: 1
+          weight: 2
+          child:
+            type: area_chart
+            name: latency_area_chart
+            series_key: viz.area_chart_series
+            show_scale: true
+    - type: row
+      name: visuals_density_row
+      weight: 5
+      children:
+        - type: box
+          name: bar_chart_box
+          title: throughput bars
+          padding: 1
+          weight: 2
+          child:
+            type: bar_chart
+            name: throughput_bar_chart
+            bars_key: viz.throughput_bars
+            show_labels: true
+        - type: box
+          name: gauge_box
+          title: gauges
+          padding: 1
+          weight: 1
+          child:
+            type: column
+            name: gauge_column
+            children:
+              - type: gauge
+                name: burst_gauge
+                label: burst
+                value_key: signals.packet_sample
+                weight: 1
+              - type: gauge
+                name: sync_gauge
+                label: uplink
+                value_key: signals.uplink_progress
+                fill_color: "@success"
+                weight: 1
+              - type: gauge
+                name: scan_gauge
+                label: scan
+                value_key: signals.scan_progress
+                fill_color: "@warn"
+                weight: 1
+        - type: box
+          name: heatmap_box
+          title: heatmap
+          padding: 1
+          weight: 2
+          child:
+            type: heatmap
+            name: queue_heatmap
+            matrix_key: viz.heatmap
+    - type: status_strip
+      name: visuals_status_strip
+      segments_key: ui.status_strip
+      bg_color: "@surface_alt"
+      weight: 1

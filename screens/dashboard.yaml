@@ -40,11 +40,22 @@ theme:
       accent_color: "@accent_alt"
     progress_bar:
       fill_color: "@accent"
+    chart:
+      axis_color: "@border"
+      fill_color: "@accent"
+    gauge:
+      fill_color: "@accent"
+      empty_color: "@border"
     alert:
       info_fg_color: "@info"
       warn_fg_color: "@warn"
       error_fg_color: "@error"
       success_fg_color: "@success"
+    heatmap:
+      fg_color: "@accent"
+      color_ramp: ["@text_muted", "@accent", "@success", "@warn", "@error"]
+      bg_ramp: ["@surface", "@surface_alt", "@success", "@warn", "@error"]
+      cell_char: " "
     list:
       selected_fg_color: "@selection_fg"
       selected_bg_color: "@selection_bg"
@@ -66,6 +77,26 @@ theme:
       warn_fg_color: "@warn"
       error_fg_color: "@error"
       success_fg_color: "@success"
+    timeline:
+      info_fg_color: "@info"
+      warn_fg_color: "@warn"
+      error_fg_color: "@error"
+      success_fg_color: "@success"
+    event_feed:
+      info_fg_color: "@info"
+      warn_fg_color: "@warn"
+      error_fg_color: "@error"
+      success_fg_color: "@success"
+    inspector:
+      key_color: "@text_muted"
+      value_color: "@text"
+    diff_viewer:
+      added_fg_color: "@success"
+      removed_fg_color: "@error"
+      hint_fg_color: "@warn"
+    flow:
+      active_fg_color: "@accent"
+      idle_fg_color: "@text_muted"
     modal:
       backdrop_bg_color: "#11131a"
 
@@ -80,6 +111,8 @@ router:
   routes:
     - overview
     - forensics
+    - visuals
+    - analysis
     - logs
     - help_modal
   initial: overview

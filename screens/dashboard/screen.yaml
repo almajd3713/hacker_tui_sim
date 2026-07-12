@@ -23,6 +23,14 @@ child:
     - key: "3"
       action: route_set
       payload:
+        route: visuals
+    - key: "4"
+      action: route_set
+      payload:
+        route: analysis
+    - key: "5"
+      action: route_set
+      payload:
         route: logs
     - key: m
       action: store_toggle
@@ -35,6 +43,8 @@ child:
   tabs:
     - include: tabs/overview.yaml
     - include: tabs/forensics.yaml
+    - include: tabs/visuals.yaml
+    - include: tabs/analysis.yaml
     - include: tabs/logs.yaml
 modals:
   - include: modals/help.yaml

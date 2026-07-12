@@ -472,5 +472,7 @@
       fg_color: "@text_muted"
     - text: "tab focus"
       fg_color: "@text_muted"
-    - text: "enter menu / j-k lists / arrows scroll"
+    - text: "1-5 tabs / enter menu / j-k lists / arrows scroll"
       fg_color: "@text_muted"
+
+- include: providers/phase8.yaml

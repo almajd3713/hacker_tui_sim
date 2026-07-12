@@ -111,6 +111,14 @@ child:
                     action: route_set
                     payload:
                       route: logs
+                  - label: route visuals
+                    action: route_set
+                    payload:
+                      route: visuals
+                  - label: route analysis
+                    action: route_set
+                    payload:
+                      route: analysis
                   - label: open help overlay
                     action: route_push
                     payload:

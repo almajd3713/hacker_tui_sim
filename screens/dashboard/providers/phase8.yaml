@@ -1,0 +1,270 @@
+- type: waveform
+  name: link_primary_sample
+  target: viz_samples.link_primary
+  waveform: sine
+  frequency: 0.36
+  phase: 0.15
+  amplitude: 0.26
+  offset: 0.62
+
+- type: waveform
+  name: link_secondary_sample
+  target: viz_samples.link_secondary
+  waveform: sine
+  frequency: 0.52
+  phase: 1.1
+  amplitude: 0.22
+  offset: 0.48
+
+- type: waveform
+  name: latency_sample
+  target: viz_samples.latency
+  waveform: triangle
+  frequency: 0.31
+  phase: 0.4
+  amplitude: 0.35
+  offset: 0.45
+
+- type: waveform
+  name: thermal_sample
+  target: viz_samples.thermal
+  waveform: sine
+  frequency: 0.28
+  phase: 2.0
+  amplitude: 0.18
+  offset: 0.58
+
+- type: waveform
+  name: ingress_sample
+  target: viz_samples.ingress
+  waveform: sine
+  frequency: 0.44
+  phase: 0.2
+  amplitude: 180
+  offset: 420
+
+- type: waveform
+  name: egress_sample
+  target: viz_samples.egress
+  waveform: sine
+  frequency: 0.38
+  phase: 1.8
+  amplitude: 120
+  offset: 260
+
+- type: waveform
+  name: queue_a_sample
+  target: viz_samples.queue_a
+  waveform: sine
+  frequency: 0.71
+  phase: 0.3
+  amplitude: 0.4
+  offset: 0.5
+
+- type: waveform
+  name: queue_b_sample
+  target: viz_samples.queue_b
+  waveform: saw
+  frequency: 0.56
+  phase: 0.8
+  amplitude: 0.35
+  offset: 0.55
+
+- type: waveform
+  name: queue_c_sample
+  target: viz_samples.queue_c
+  waveform: triangle
+  frequency: 0.66
+  phase: 1.4
+  amplitude: 0.3
+  offset: 0.42
+
+- type: rolling_window
+  name: link_primary_series
+  target: viz.link_primary_series
+  source: viz_samples.link_primary
+  size: 64
+  depends_on: [link_primary_sample]
+
+- type: rolling_window
+  name: link_secondary_series
+  target: viz.link_secondary_series
+  source: viz_samples.link_secondary
+  size: 64
+  depends_on: [link_secondary_sample]
+
+- type: rolling_window
+  name: latency_series
+  target: viz.latency_series
+  source: viz_samples.latency
+  size: 64
+  depends_on: [latency_sample]
+
+- type: records
+  name: heatmap_row
+  target: viz.heatmap_row
+  depends_on: [queue_a_sample, queue_b_sample, queue_c_sample, scan_progress, uplink_progress, packet_sample]
+  items:
+    - source: viz_samples.queue_a
+    - source: viz_samples.queue_b
+    - source: viz_samples.queue_c
+    - source: signals.scan_progress
+    - source: signals.uplink_progress
+    - source: signals.packet_sample
+
+- type: grid_history
+  name: heatmap_grid
+  target: viz.heatmap
+  source: viz.heatmap_row
+  size: 14
+  depends_on: [heatmap_row]
+
+- type: transform
+  name: line_chart_series
+  target: viz.line_chart_series
+  depends_on: [link_primary_series, link_secondary_series]
+  items:
+    - label: uplink
+      values: viz.link_primary_series
+      fg_color: "@accent"
+    - label: relay
+      values: viz.link_secondary_series
+      fg_color: "@accent_alt"
+
+- type: transform
+  name: area_chart_series
+  target: viz.area_chart_series
+  depends_on: [latency_series]
+  items:
+    - label: latency envelope
+      values: viz.latency_series
+      fg_color: "@success"
+      fill_color: "@success"
+
+- type: transform
+  name: throughput_bars
+  target: viz.throughput_bars
+  depends_on: [ingress_sample, egress_sample, thread_count, memory_gb]
+  items:
+    - label: in
+      value: viz_samples.ingress
+      fg_color: "@accent"
+    - label: out
+      value: viz_samples.egress
+      fg_color: "@success"
+    - label: thr
+      value: stats_sources.thread_count
+      fg_color: "@warn"
+    - label: mem
+      value: stats_sources.memory_gb
+      fg_color: "@accent_alt"
+
+- type: event_stream
+  name: visual_timeline
+  target: viz.timeline
+  interval: 1.0
+  max_items: 24
+  depends_on: [alert_level, packet_sample, ingress_sample]
+  item:
+    level:
+      path: alerts.level
+    source: uplink
+    label:
+      template: "burst {burst} / ingress {ingress}"
+      mapping:
+        burst:
+          path: signals.packet_sample
+          formatter:
+            name: fixed
+            precision: 2
+        ingress:
+          path: viz_samples.ingress
+          formatter:
+            name: fixed
+            precision: 0
+
+- type: transform
+  name: inspector_payload
+  target: viz.inspector
+  depends_on: [system_stats, host_info, frame]
+  mapping:
+    host:
+      path: host
+    runtime:
+      path: runtime.frame
+    system:
+      path: system
+    provider_packet_series:
+      path: telemetry.provider_meta.packet_series
+
+- type: constant
+  name: diff_left
+  target: viz.diff_left
+  value: |-
+    route overview
+    scan-mode passive
+    relay-window 32
+    packet-threshold 0.75
+    heatmap-bucket 6
+
+- type: transform
+  name: diff_right
+  target: viz.diff_right
+  depends_on: [packet_sample, scan_progress]
+  template: |-
+    route visuals
+    scan-mode active
+    relay-window {window}
+    packet-threshold {threshold}
+    heatmap-bucket 8
+  mapping:
+    window:
+      path: runtime.frame.terminal_width
+      formatter:
+        name: fixed
+        precision: 0
+    threshold:
+      path: signals.packet_sample
+      formatter:
+        name: fixed
+        precision: 2
+
+- type: transform
+  name: flow_edges
+  target: viz.flow_edges
+  depends_on: [packet_sample, uplink_progress, alert_level]
+  items:
+    - from: edge
+      to: ingress
+      label:
+        path: viz_samples.ingress
+        formatter:
+          name: fixed
+          precision: 0
+        template: "{value} kb/s"
+      state: active
+    - from: ingress
+      to: parser
+      label:
+        path: alerts.level
+      state:
+        path: alerts.level
+        operations:
+          - name: template
+            template: "{value}"
+    - from: parser
+      to: queue
+      label:
+        path: signals.packet_sample
+        formatter:
+          name: fixed
+          precision: 2
+      state: active
+    - from: queue
+      to: uplink
+      label:
+        path: signals.uplink_progress
+        formatter:
+          name: percent
+          precision: 0
+      state: online

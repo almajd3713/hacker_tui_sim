@@ -1,0 +1,65 @@
+title: Analysis
+route: analysis
+child:
+  type: column
+  name: analysis_screen
+  children:
+    - type: row
+      name: analysis_top_row
+      weight: 4
+      children:
+        - type: box
+          name: timeline_box
+          title: timeline
+          padding: 1
+          weight: 2
+          child:
+            type: timeline
+            name: ops_timeline
+            events_key: viz.timeline
+        - type: box
+          name: feed_box
+          title: event feed
+          padding: 1
+          weight: 3
+          child:
+            type: event_feed
+            name: ops_feed
+            events_key: logs.main
+    - type: row
+      name: analysis_bottom_row
+      weight: 6
+      children:
+        - type: box
+          name: inspector_box
+          title: inspector
+          padding: 1
+          weight: 2
+          child:
+            type: inspector
+            name: runtime_inspector
+            data_key: viz.inspector
+        - type: box
+          name: diff_box
+          title: diff viewer
+          padding: 1
+          weight: 2
+          child:
+            type: diff_viewer
+            name: config_diff
+            left_key: viz.diff_left
+            right_key: viz.diff_right
+        - type: box
+          name: flow_box
+          title: flow view
+          padding: 1
+          weight: 2
+          child:
+            type: flow
+            name: pipeline_flow
+            edges_key: viz.flow_edges
+    - type: status_strip
+      name: analysis_status_strip
+      segments_key: ui.status_strip
+      bg_color: "@surface_alt"
+      weight: 1
