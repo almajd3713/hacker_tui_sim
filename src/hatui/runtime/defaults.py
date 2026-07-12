@@ -34,9 +34,13 @@ from hatui.widgets import (
     DividerWidget,
     HexDumpWidget,
     LabelWidget,
+    ListWidget,
     LogWidget,
+    MenuWidget,
     MetricGridWidget,
     MiniChartWidget,
+    ModalHostWidget,
+    ModalWidget,
     ParagraphWidget,
     ProgressBarWidget,
     RowWidget,
@@ -100,6 +104,20 @@ def _build_tabs(spec: dict, loader):
     return TabsWidget(tabs=tabs, **kwargs)
 
 
+def _build_modal_host(spec: dict, loader):
+    child_spec = spec.get("child") or spec.get("screen")
+    child = loader.build_widget(child_spec) if child_spec is not None else None
+    modals = []
+    for modal_spec in spec.get("modals", []):
+        route = modal_spec.get("route")
+        child_spec = modal_spec.get("child") or modal_spec.get("screen") or modal_spec.get("modal")
+        if not route or child_spec is None:
+            raise ValueError("Modal host entries require 'route' and 'child'/'screen'/'modal'")
+        modals.append((route, loader.build_widget(child_spec)))
+    kwargs = _clean(spec, {"type", "weight", "child", "screen", "modals", *GENERIC_WIDGET_KEYS})
+    return ModalHostWidget(child=child, modals=modals, **kwargs)
+
+
 def _build_plain(spec: dict, loader, widget_cls):
     kwargs = _clean(spec, {"type", "weight", *GENERIC_WIDGET_KEYS})
     return widget_cls(**kwargs)
@@ -110,13 +128,17 @@ def create_widget_registry() -> WidgetRegistry:
     registry.register("row", _build_row)
     registry.register("column", _build_column)
     registry.register("tabs", _build_tabs)
+    registry.register("modal_host", _build_modal_host)
     registry.register("box", lambda spec, loader: _build_single_child(spec, loader, BoxWidget))
     registry.register("border", lambda spec, loader: _build_single_child(spec, loader, BorderWidget))
     registry.register("center", _build_center)
     registry.register("scroll", lambda spec, loader: _build_single_child(spec, loader, ScrollWidget))
+    registry.register("modal", lambda spec, loader: _build_single_child(spec, loader, ModalWidget))
 
     registry.register("text", lambda spec, loader: _build_plain(spec, loader, TextWidget))
     registry.register("label", lambda spec, loader: _build_plain(spec, loader, LabelWidget))
+    registry.register("list", lambda spec, loader: _build_plain(spec, loader, ListWidget))
+    registry.register("menu", lambda spec, loader: _build_plain(spec, loader, MenuWidget))
     registry.register("paragraph", lambda spec, loader: _build_plain(spec, loader, ParagraphWidget))
     registry.register("banner", lambda spec, loader: _build_plain(spec, loader, BannerWidget))
     registry.register("alert", lambda spec, loader: _build_plain(spec, loader, AlertWidget))

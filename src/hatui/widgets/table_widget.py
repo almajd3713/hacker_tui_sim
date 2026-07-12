@@ -12,18 +12,31 @@ class TableWidget(Widget):
         columns: list[dict],
         rows_key: str | None = None,
         show_header: bool = True,
+        selectable: bool = False,
+        selected_index: int = 0,
+        selected_index_key: str | None = None,
+        selected_row_key: str | None = None,
         fg_color: str | None = None,
         bg_color: str | None = None,
         header_color: str | None = None,
+        selected_fg_color: str | None = None,
+        selected_bg_color: str | None = None,
     ):
         super().__init__(name)
         self.columns = columns
         self.rows_key = rows_key
         self.show_header = show_header
+        self.selectable = selectable
+        self.selected_index = max(selected_index, 0)
+        self.selected_index_key = selected_index_key
+        self.selected_row_key = selected_row_key
         self.fg_color = fg_color
         self.bg_color = bg_color
         self.header_color = header_color
+        self.selected_fg_color = selected_fg_color
+        self.selected_bg_color = selected_bg_color
         self.state["rows"] = []
+        self.state["selected_index"] = self.selected_index
 
     @property
     def _schema(self):
@@ -31,14 +44,61 @@ class TableWidget(Widget):
             "columns": list,
             "rows_key": str,
             "show_header": bool,
+            "selectable": bool,
+            "selected_index": int,
+            "selected_index_key": str,
+            "selected_row_key": str,
             "fg_color": str,
             "bg_color": str,
             "header_color": str,
+            "selected_fg_color": str,
+            "selected_bg_color": str,
         }
+
+    def default_focusable(self) -> bool:
+        return self.selectable
+
+    def default_keybindings(self) -> list[dict]:
+        if not self.selectable:
+            return []
+        return [
+            {"key": "up", "action": "select_prev"},
+            {"key": "down", "action": "select_next"},
+            {"key": "j", "action": "select_next"},
+            {"key": "k", "action": "select_prev"},
+            {"key": "g", "action": "select_first"},
+            {"key": "shift+g", "action": "select_last"},
+        ]
+
+    def _sync_selection(self, context: WidgetContext):
+        rows = self.state.get("rows", [])
+        if not rows:
+            self.state["selected_index"] = 0
+            return
+        self.state["selected_index"] = max(0, min(self.state.get("selected_index", 0), len(rows) - 1))
+        if self.selected_index_key is not None:
+            self.root.perform_action(
+                "store_set",
+                {"path": self.selected_index_key, "value": self.state["selected_index"]},
+                context,
+            )
+        if self.selected_row_key is not None:
+            self.root.perform_action(
+                "store_set",
+                {"path": self.selected_row_key, "value": rows[self.state["selected_index"]]},
+                context,
+            )
 
     def update(self, delta_time: float, context: WidgetContext):
         rows = resolve_path(context.data, self.rows_key, []) if self.rows_key is not None else []
         self.state["rows"] = list(rows)
+        if self.selected_index_key is not None:
+            value = resolve_path(context.data, self.selected_index_key, self.state.get("selected_index", self.selected_index))
+            try:
+                self.state["selected_index"] = max(int(value), 0)
+            except (TypeError, ValueError):
+                self.state["selected_index"] = self.selected_index
+        self._sync_selection(context)
         super().update(delta_time, context)
 
     def allocate(self, width: int, height: int):
@@ -86,6 +146,34 @@ class TableWidget(Widget):
         header_rows = 1 if self.show_header else 0
         return max(width, 0), max(len(self.state.get("rows", [])) + header_rows, height, 0)
 
+    def _move_selection(self, delta: int, context: WidgetContext):
+        rows = self.state.get("rows", [])
+        if not rows:
+            return
+        self.state["selected_index"] = max(0, min(self.state.get("selected_index", 0) + delta, len(rows) - 1))
+        self._sync_selection(context)
+
+    def handle_action(self, action: str, payload: dict, context: WidgetContext) -> bool:
+        if not self.selectable:
+            return False
+        if action == "select_prev":
+            self._move_selection(-1, context)
+            return True
+        if action == "select_next":
+            self._move_selection(1, context)
+            return True
+        if action == "select_first":
+            self.state["selected_index"] = 0
+            self._sync_selection(context)
+            return True
+        if action == "select_last":
+            rows = self.state.get("rows", [])
+            if rows:
+                self.state["selected_index"] = len(rows) - 1
+                self._sync_selection(context)
+            return True
+        return False
+
     def paint(self, buffer, context: WidgetContext):
         rect = self.properties["rect"]
         if rect.width <= 0 or rect.height <= 0 or not self.columns:
@@ -104,6 +192,11 @@ class TableWidget(Widget):
             bg_color=base_style.bg_color,
             fallback=base_style,
         )
+        selected_style = resolve_style(
+            fg_color=self.selected_fg_color or self.focus_fg_color or "#ffffff",
+            bg_color=self.selected_bg_color or self.focus_bg_color or context.theme.border.bg_color,
+            fallback=base_style,
+        )
 
         widths = self._column_widths(rect.width)
         if not widths:
@@ -118,8 +211,14 @@ class TableWidget(Widget):
             buffer.write_text(rect.x, y, header, header_style.fg_color, header_style.bg_color)
             y += 1
 
-        visible_rows = self.state.get("rows", [])[: max(rect.y + rect.height - y, 0)]
-        for row in visible_rows:
+        rows = self.state.get("rows", [])
+        visible_capacity = max(rect.y + rect.height - y, 0)
+        start_index = 0
+        if self.selectable and visible_capacity > 0 and rows:
+            selected_index = self.state.get("selected_index", 0)
+            start_index = min(max(selected_index - visible_capacity + 1, 0), max(len(rows) - visible_capacity, 0))
+        visible_rows = rows[start_index : start_index + visible_capacity]
+        for row_offset, row in enumerate(visible_rows):
             if y >= rect.y + rect.height:
                 break
 
@@ -128,5 +227,6 @@ class TableWidget(Widget):
                 key = column.get("key", "")
                 align = column.get("align", "left")
                 parts.append(self._format_cell(row.get(key, ""), width, align))
-            buffer.write_text(rect.x, y, " ".join(parts)[: rect.width], base_style.fg_color, base_style.bg_color)
+            row_style = selected_style if self.selectable and (start_index + row_offset) == self.state.get("selected_index", 0) else base_style
+            buffer.write_text(rect.x, y, " ".join(parts)[: rect.width], row_style.fg_color, row_style.bg_color)
             y += 1

@@ -12,12 +12,16 @@ theme:
 state:
   flags:
     compact_mode: false
+  selection:
+    quick_action_index: 0
+    relay_index: 0
 
 router:
   routes:
     - overview
     - forensics
     - logs
+    - help_modal
   initial: overview
 
 providers:
@@ -69,6 +73,20 @@ providers:
       The note panel is also scrollable now, which gives us a bounded place for long-form operator guidance, incident notes, or task checklists.
 
       Focus the viewport and use arrow keys or j/k to move through the text.
+
+  - type: constant
+    name: help_text
+    target: ui.help_text
+    value: |-
+      Hatui now has a generic modal host layered above the routed screens.
+
+      This overlay is route-driven:
+      - open it through a normal action
+      - keep the underlying screen visible
+      - trap focus to modal content while active
+      - close it with route pop rather than widget-local teardown
+
+      This is the base for future inspectors, command palettes, confirmations, and transient workflows.
 
   - type: constant
     name: hex_dump
@@ -418,6 +436,10 @@ providers:
           template: "compact {value}"
         fg_color: "#9e8be0"
       - text:
+          path: state.selection.relay_index
+          template: "relay #{value}"
+        fg_color: "#59d0ff"
+      - text:
           path: runtime.frame.frame
           formatter:
             name: fixed
@@ -440,301 +462,386 @@ providers:
         fg_color: "#cbb7ff"
       - text: "tab focus"
         fg_color: "#9e8be0"
-      - text: "1-3 screens / m toggle / arrows scroll"
+      - text: "enter menu / j-k lists / arrows scroll"
         fg_color: "#9e8be0"
 
 screen:
-  type: tabs
-  name: root_tabs
-  show_tabs: true
-  focus_fg_color: "#59d0ff"
-  focus_bg_color: "#1d2533"
+  type: modal_host
+  name: app_shell
   keybindings:
-    - key: "1"
-      action: route_set
+    - key: h
+      action: route_push
       payload:
+        route: help_modal
+  child:
+    type: tabs
+    name: root_tabs
+    show_tabs: true
+    focus_fg_color: "#59d0ff"
+    focus_bg_color: "#1d2533"
+    keybindings:
+      - key: "1"
+        action: route_set
+        payload:
+          route: overview
+      - key: "2"
+        action: route_set
+        payload:
+          route: forensics
+      - key: "3"
+        action: route_set
+        payload:
+          route: logs
+      - key: m
+        action: store_toggle
+        payload:
+          path: flags.compact_mode
+      - key: h
+        action: route_push
+        payload:
+          route: help_modal
+    tabs:
+      - title: Overview
         route: overview
-    - key: "2"
-      action: route_set
-      payload:
-        route: forensics
-    - key: "3"
-      action: route_set
-      payload:
-        route: logs
-    - key: m
-      action: store_toggle
-      payload:
-        path: flags.compact_mode
-  tabs:
-    - title: Overview
-      route: overview
-      child:
-        type: column
-        name: overview_screen
-        children:
-          - type: box
-            name: header_box
-            title: msys
-            title_align: center
-            padding: 1
-            style: rounded
-            fg_color: "#9b4dff"
-            focusable: true
-            focus_fg_color: "#59d0ff"
-            weight: 4
-            child:
-              type: column
-              name: header_column
-              children:
-                - type: banner
-                  name: header_banner
-                  text_key: ui.header_text
-                  fg_color: "#cbb7ff"
-                  weight: 3
-                - type: label
-                  name: header_label
-                  text_key: ui.header_subtitle
-                  align: center
-                  fg_color: "#9e8be0"
-                  weight: 1
-          - type: row
-            name: stats_row
-            weight: 3
-            children:
-              - type: box
-                name: cpu_box
-                title: cpu
-                padding: 1
-                focusable: true
-                focus_fg_color: "#59d0ff"
-                weight: 1
-                child:
-                  type: stat
-                  name: cpu_stat
-                  label: load avg
-                  data_key: stats.cpu
-                  accent_color: "#ff4d6d"
-              - type: box
-                name: mem_box
-                title: memory
-                padding: 1
-                focusable: true
-                focus_fg_color: "#59d0ff"
-                weight: 1
-                child:
-                  type: stat
-                  name: mem_stat
-                  label: resident
-                  data_key: stats.memory
-                  accent_color: "#4de0a8"
-              - type: box
-                name: net_box
-                title: network
-                padding: 1
-                focusable: true
-                focus_fg_color: "#59d0ff"
-                weight: 1
-                child:
-                  type: stat
-                  name: net_stat
-                  label: rx / tx
-                  data_key: stats.network
-                  accent_color: "#59d0ff"
-          - type: row
-            name: telemetry_row
-            weight: 7
-            children:
-              - type: box
-                name: overview_box
-                title: overview
-                padding: 1
-                focusable: true
-                focus_fg_color: "#59d0ff"
-                weight: 3
-                child:
-                  type: column
-                  name: overview_column
-                  children:
-                    - type: scroll
-                      name: overview_text_scroll
-                      focus_fg_color: "#59d0ff"
-                      weight: 3
-                      child:
-                        type: paragraph
-                        name: overview_text
-                        text_key: ui.overview_text
-                        fg_color: "#f2f2f7"
-                    - type: alert
-                      name: overview_alert
-                      message_key: alerts.message
-                      level_key: alerts.level
-                      weight: 1
-                    - type: progress_bar
-                      name: scan_bar
-                      label: deep scan
-                      value_key: signals.scan_progress
-                      show_percentage: true
-                      fill_color: "#ff4d6d"
-                      weight: 1
-                    - type: progress_bar
-                      name: uplink_bar
-                      label: uplink sync
-                      value_key: signals.uplink_progress
-                      show_percentage: true
-                      fill_color: "#4de0a8"
-                      weight: 1
-              - type: box
-                name: telemetry_box
-                title: telemetry
-                padding: 1
-                focusable: true
-                focus_fg_color: "#59d0ff"
-                weight: 2
-                child:
-                  type: column
-                  name: telemetry_column
-                  children:
-                    - type: label
-                      name: sparkline_label
-                      text: packet burst
-                      fg_color: "#f2f2f7"
-                      weight: 1
-                    - type: sparkline
-                      name: telemetry_sparkline
-                      values_key: telemetry.packet_series
-                      fg_color: "#59d0ff"
-                      weight: 1
-                    - type: mini_chart
-                      name: telemetry_mini_chart
-                      values_key: telemetry.mini_chart
-                      fg_color: "#4de0a8"
-                      weight: 4
-                    - type: paragraph
-                      name: telemetry_copy
-                      text_key: telemetry.summary
-                      weight: 2
-          - type: status_strip
-            name: overview_status_strip
-            segments_key: ui.status_strip
-            bg_color: bright_black
-            weight: 1
-
-    - title: Forensics
-      route: forensics
-      child:
-        type: column
-        name: forensics_screen
-        children:
-          - type: box
-            name: forensics_box
-            title: forensics
-            padding: 1
-            weight: 10
-            child:
-              type: row
-              name: forensics_row
+        child:
+          type: column
+          name: overview_screen
+          children:
+            - type: box
+              name: header_box
+              title: msys
+              title_align: center
+              padding: 1
+              style: rounded
+              fg_color: "#9b4dff"
+              focusable: true
+              focus_fg_color: "#59d0ff"
+              weight: 4
+              child:
+                type: column
+                name: header_column
+                children:
+                  - type: banner
+                    name: header_banner
+                    text_key: ui.header_text
+                    fg_color: "#cbb7ff"
+                    weight: 3
+                  - type: label
+                    name: header_label
+                    text_key: ui.header_subtitle
+                    align: center
+                    fg_color: "#9e8be0"
+                    weight: 1
+            - type: row
+              name: stats_row
+              weight: 3
               children:
                 - type: box
-                  name: metrics_box
-                  title: node metrics
+                  name: cpu_box
+                  title: cpu
+                  padding: 1
+                  focusable: true
+                  focus_fg_color: "#59d0ff"
+                  weight: 1
+                  child:
+                    type: stat
+                    name: cpu_stat
+                    label: load avg
+                    data_key: stats.cpu
+                    accent_color: "#ff4d6d"
+                - type: box
+                  name: mem_box
+                  title: memory
+                  padding: 1
+                  focusable: true
+                  focus_fg_color: "#59d0ff"
+                  weight: 1
+                  child:
+                    type: stat
+                    name: mem_stat
+                    label: resident
+                    data_key: stats.memory
+                    accent_color: "#4de0a8"
+                - type: box
+                  name: net_box
+                  title: network
+                  padding: 1
+                  focusable: true
+                  focus_fg_color: "#59d0ff"
+                  weight: 1
+                  child:
+                    type: stat
+                    name: net_stat
+                    label: rx / tx
+                    data_key: stats.network
+                    accent_color: "#59d0ff"
+            - type: row
+              name: telemetry_row
+              weight: 7
+              children:
+                - type: box
+                  name: overview_box
+                  title: overview
                   padding: 1
                   focusable: true
                   focus_fg_color: "#59d0ff"
                   weight: 3
                   child:
                     type: column
-                    name: metrics_column
+                    name: overview_column
                     children:
-                      - type: metric_grid
-                        name: metric_grid
-                        metrics_key: panels.metric_grid
-                        columns: 2
-                        accent_color: "#f2f2f7"
-                        weight: 2
-                      - type: divider
-                        name: metric_divider
-                        fg_color: "#5a5a78"
-                        weight: 1
-                      - type: code_block
-                        name: code_block
-                        code_key: panels.code_block
-                        show_line_numbers: true
-                        line_number_color: "#5a5a78"
+                      - type: scroll
+                        name: overview_text_scroll
+                        focus_fg_color: "#59d0ff"
                         weight: 3
-                      - type: hex_dump
-                        name: hex_dump
-                        data_key: panels.hex_dump
-                        bytes_per_row: 8
-                        offset_color: "#5a5a78"
+                        child:
+                          type: paragraph
+                          name: overview_text
+                          text_key: ui.overview_text
+                          fg_color: "#f2f2f7"
+                      - type: alert
+                        name: overview_alert
+                        message_key: alerts.message
+                        level_key: alerts.level
+                        weight: 1
+                      - type: menu
+                        name: quick_actions
+                        selected_index_key: selection.quick_action_index
+                        selected_fg_color: "#10131a"
+                        selected_bg_color: "#59d0ff"
+                        bullet: "» "
                         weight: 2
+                        items:
+                          - label: route overview
+                            action: route_set
+                            payload:
+                              route: overview
+                          - label: route forensics
+                            action: route_set
+                            payload:
+                              route: forensics
+                          - label: route logs
+                            action: route_set
+                            payload:
+                              route: logs
+                          - label: open help overlay
+                            action: route_push
+                            payload:
+                              route: help_modal
+                          - label: toggle compact mode
+                            action: store_toggle
+                            payload:
+                              path: flags.compact_mode
+                      - type: progress_bar
+                        name: scan_bar
+                        label: deep scan
+                        value_key: signals.scan_progress
+                        show_percentage: true
+                        fill_color: "#ff4d6d"
+                        weight: 1
+                      - type: progress_bar
+                        name: uplink_bar
+                        label: uplink sync
+                        value_key: signals.uplink_progress
+                        show_percentage: true
+                        fill_color: "#4de0a8"
+                        weight: 1
                 - type: box
-                  name: table_box
-                  title: relay table
+                  name: telemetry_box
+                  title: telemetry
                   padding: 1
                   focusable: true
                   focus_fg_color: "#59d0ff"
                   weight: 2
                   child:
-                    type: scroll
-                    name: relay_table_scroll
+                    type: column
+                    name: telemetry_column
+                    children:
+                      - type: label
+                        name: sparkline_label
+                        text: packet burst
+                        fg_color: "#f2f2f7"
+                        weight: 1
+                      - type: sparkline
+                        name: telemetry_sparkline
+                        values_key: telemetry.packet_series
+                        fg_color: "#59d0ff"
+                        weight: 1
+                      - type: mini_chart
+                        name: telemetry_mini_chart
+                        values_key: telemetry.mini_chart
+                        fg_color: "#4de0a8"
+                        weight: 4
+                      - type: paragraph
+                        name: telemetry_copy
+                        text_key: telemetry.summary
+                        weight: 2
+            - type: status_strip
+              name: overview_status_strip
+              segments_key: ui.status_strip
+              bg_color: bright_black
+              weight: 1
+
+      - title: Forensics
+        route: forensics
+        child:
+          type: column
+          name: forensics_screen
+          children:
+            - type: box
+              name: forensics_box
+              title: forensics
+              padding: 1
+              weight: 10
+              child:
+                type: row
+                name: forensics_row
+                children:
+                  - type: box
+                    name: metrics_box
+                    title: node metrics
+                    padding: 1
+                    focusable: true
                     focus_fg_color: "#59d0ff"
+                    weight: 3
+                    child:
+                      type: column
+                      name: metrics_column
+                      children:
+                        - type: metric_grid
+                          name: metric_grid
+                          metrics_key: panels.metric_grid
+                          columns: 2
+                          accent_color: "#f2f2f7"
+                          weight: 2
+                        - type: divider
+                          name: metric_divider
+                          fg_color: "#5a5a78"
+                          weight: 1
+                        - type: code_block
+                          name: code_block
+                          code_key: panels.code_block
+                          show_line_numbers: true
+                          line_number_color: "#5a5a78"
+                          weight: 3
+                        - type: hex_dump
+                          name: hex_dump
+                          data_key: panels.hex_dump
+                          bytes_per_row: 8
+                          offset_color: "#5a5a78"
+                          weight: 2
+                  - type: box
+                    name: table_box
+                    title: relay table
+                    padding: 1
+                    focusable: true
+                    focus_fg_color: "#59d0ff"
+                    weight: 2
                     child:
                       type: table
                       name: relay_table
                       rows_key: panels.relay_rows
+                      selectable: true
+                      selected_index_key: selection.relay_index
+                      selected_row_key: selection.relay_row
+                      selected_fg_color: "#10131a"
+                      selected_bg_color: "#4de0a8"
                       header_color: "#f2f2f7"
                       columns:
                         - {title: relay, key: relay, width: 8}
                         - {title: lat, key: latency, width: 7, align: right}
                         - {title: loss, key: loss, width: 6, align: right}
                         - {title: state, key: state}
-          - type: status_strip
-            name: forensics_status_strip
-            segments_key: ui.status_strip
-            bg_color: bright_black
-            weight: 1
+            - type: status_strip
+              name: forensics_status_strip
+              segments_key: ui.status_strip
+              bg_color: bright_black
+              weight: 1
 
-    - title: Logs
-      route: logs
+      - title: Logs
+        route: logs
+        child:
+          type: column
+          name: logs_screen
+          children:
+            - type: box
+              name: logs_box
+              title: event log
+              padding: 1
+              focusable: true
+              focus_fg_color: "#59d0ff"
+              weight: 8
+              child:
+                type: scroll
+                name: log_scroll
+                focus_fg_color: "#59d0ff"
+                child:
+                  type: log
+                  name: log_widget
+                  lines_key: logs.main
+                  max_lines: 80
+                  show_timestamp: true
+            - type: box
+              name: status_box
+              title: operator note
+              padding: 1
+              focusable: true
+              focus_fg_color: "#59d0ff"
+              weight: 2
+              child:
+                type: scroll
+                name: logs_note_scroll
+                focus_fg_color: "#59d0ff"
+                child:
+                  type: paragraph
+                  name: logs_note
+                  text_key: ui.logs_note
+            - type: status_strip
+              name: logs_status_strip
+              segments_key: ui.status_strip
+              bg_color: bright_black
+              weight: 1
+  modals:
+    - route: help_modal
       child:
-        type: column
-        name: logs_screen
-        children:
-          - type: box
-            name: logs_box
-            title: event log
-            padding: 1
-            focusable: true
-            focus_fg_color: "#59d0ff"
-            weight: 8
-            child:
-              type: scroll
-              name: log_scroll
-              focus_fg_color: "#59d0ff"
-              child:
-                type: log
-                name: log_widget
-                lines_key: logs.main
-                max_lines: 80
-                show_timestamp: true
-          - type: box
-            name: status_box
-            title: operator note
-            padding: 1
-            focusable: true
-            focus_fg_color: "#59d0ff"
-            weight: 2
-            child:
-              type: scroll
-              name: logs_note_scroll
-              focus_fg_color: "#59d0ff"
-              child:
-                type: paragraph
-                name: logs_note
-                text_key: ui.logs_note
-          - type: status_strip
-            name: logs_status_strip
-            segments_key: ui.status_strip
-            bg_color: bright_black
-            weight: 1
+        type: modal
+        name: help_modal
+        width: 72
+        height: 18
+        backdrop_bg_color: "#11131a"
+        child:
+          type: box
+          name: help_modal_box
+          title: help overlay
+          padding: 1
+          style: rounded
+          fg_color: "#59d0ff"
+          child:
+            type: column
+            name: help_modal_column
+            children:
+              - type: paragraph
+                name: help_modal_text
+                text_key: ui.help_text
+                weight: 4
+              - type: menu
+                name: help_modal_menu
+                bullet: "» "
+                selected_fg_color: "#10131a"
+                selected_bg_color: "#59d0ff"
+                weight: 3
+                items:
+                  - label: close overlay
+                    action: route_pop
+                  - label: jump to overview
+                    action: route_set
+                    payload:
+                      route: overview
+                  - label: jump to forensics
+                    action: route_set
+                    payload:
+                      route: forensics
+                  - label: jump to logs
+                    action: route_set
+                    payload:
+                      route: logs
