@@ -8,7 +8,7 @@ from typing import Any, get_args, get_origin
 
 from hatui.runtime.registries import ProviderRegistry, WidgetRegistration, WidgetRegistry
 
-TOP_LEVEL_KEYS = {"theme", "state", "router", "providers", "screen"}
+TOP_LEVEL_KEYS = {"theme", "state", "router", "providers", "screen", "dev"}
 GENERIC_WIDGET_KEYS = {"type", "name", "weight", "focusable", "selectable", "focus_fg_color", "focus_bg_color", "keybindings", "include"}
 BASE_PROVIDER_KEYS = {
     "type",
@@ -55,6 +55,7 @@ class SpecValidator:
         self._validate_theme(spec.get("theme"), "theme", messages)
         self._validate_state(spec.get("state"), "state", messages)
         self._validate_router(spec.get("router"), "router", messages)
+        self._validate_dev(spec.get("dev"), "dev", messages)
         self._validate_providers(spec.get("providers"), "providers", messages)
         self._validate_screen(spec.get("screen"), "screen", messages)
         return messages
@@ -102,6 +103,35 @@ class SpecValidator:
             messages.append(ValidationMessage(f"{path}.routes", "expected a list"))
         if "initial" in router and not isinstance(router["initial"], str):
             messages.append(ValidationMessage(f"{path}.initial", "expected a string"))
+
+    def _validate_dev(self, dev: Any, path: str, messages: list[ValidationMessage]) -> None:
+        if dev is None:
+            return
+        if not isinstance(dev, dict):
+            messages.append(ValidationMessage(path, "expected an object"))
+            return
+        watch = dev.get("watch")
+        if watch is None:
+            return
+        if not isinstance(watch, dict):
+            messages.append(ValidationMessage(f"{path}.watch", "expected an object"))
+            return
+        for key in watch:
+            if key not in {"enabled", "interval", "debounce", "paths"}:
+                messages.append(ValidationMessage(f"{path}.watch", f"unknown field '{key}'"))
+        if "enabled" in watch and not isinstance(watch["enabled"], bool):
+            messages.append(ValidationMessage(f"{path}.watch.enabled", "expected a bool"))
+        if "interval" in watch and not isinstance(watch["interval"], (int, float)):
+            messages.append(ValidationMessage(f"{path}.watch.interval", "expected a float"))
+        if "debounce" in watch and not isinstance(watch["debounce"], (int, float)):
+            messages.append(ValidationMessage(f"{path}.watch.debounce", "expected a float"))
+        if "paths" in watch:
+            if not isinstance(watch["paths"], list):
+                messages.append(ValidationMessage(f"{path}.watch.paths", "expected a list"))
+            else:
+                for index, item in enumerate(watch["paths"]):
+                    if not isinstance(item, str):
+                        messages.append(ValidationMessage(f"{path}.watch.paths[{index}]", "expected a string"))
 
     def _validate_providers(self, providers: Any, path: str, messages: list[ValidationMessage]) -> None:
         if providers is None:

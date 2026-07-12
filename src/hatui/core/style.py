@@ -116,6 +116,7 @@ THEME_PRESETS: dict[str, dict[str, Any]] = {
             "table": {"header_color": "@text", "selected_fg_color": "@selection_fg", "selected_bg_color": "@selection_bg"},
             "list": {"selected_fg_color": "@selection_fg", "selected_bg_color": "@selection_bg"},
             "menu": {"selected_fg_color": "@selection_fg", "selected_bg_color": "@selection_bg"},
+            "tree": {"selected_fg_color": "@selection_fg", "selected_bg_color": "@selection_bg"},
             "scroll": {"scrollbar_fg_color": "@border", "scrollbar_bg_color": "@surface_alt"},
             "log": {"warn_fg_color": "@warn", "error_fg_color": "@error", "success_fg_color": "@success"},
             "timeline": {"info_fg_color": "@info", "warn_fg_color": "@warn", "error_fg_color": "@error", "success_fg_color": "@success"},

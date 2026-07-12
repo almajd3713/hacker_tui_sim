@@ -153,6 +153,8 @@ class Widget(ABC):
             return bool(root.route_push(payload.get("route"), context))
         if action == "route_pop" and hasattr(root, "route_pop"):
             return bool(root.route_pop(context))
+        if action == "route_pop_focus_widget" and hasattr(root, "route_pop_focus_widget"):
+            return bool(root.route_pop_focus_widget(payload.get("target"), context))
         if action == "store_set" and hasattr(root, "store_set"):
             return bool(root.store_set(payload.get("path"), payload.get("value"), context))
         if action == "store_toggle" and hasattr(root, "store_toggle"):

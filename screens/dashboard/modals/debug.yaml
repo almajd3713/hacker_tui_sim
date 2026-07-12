@@ -26,11 +26,12 @@ child:
               padding: 1
               weight: 5
               child:
-                type: list
-                name: debug_tree_list
-                items_key: _debug.widget_tree_lines
-                show_bullet: false
-                focusable: false
+                type: tree
+                name: debug_tree
+                items_key: _debug.widget_tree
+                selected_item_key: debug.selected_tree_item
+                activate_action: route_pop_focus_widget
+                activate_target_field: widget_name
             - type: box
               name: debug_provider_box
               title: providers
@@ -42,12 +43,30 @@ child:
                 data_key: _providers
                 focusable: false
         - type: box
-          name: debug_runtime_box
-          title: runtime
-          padding: 1
+          name: debug_footer_row
           weight: 4
           child:
-            type: inspector
-            name: debug_runtime_inspector
-            data_key: _debug
-            focusable: false
+            type: row
+            name: debug_footer
+            children:
+              - type: box
+                name: debug_runtime_box
+                title: runtime
+                padding: 1
+                weight: 4
+                child:
+                  type: inspector
+                  name: debug_runtime_inspector
+                  data_key: _debug.stats
+                  focusable: false
+              - type: box
+                name: debug_watch_box
+                title: watched files
+                padding: 1
+                weight: 6
+                child:
+                  type: list
+                  name: debug_watch_list
+                  items_key: _debug.stats.watched_files
+                  show_bullet: false
+                  focusable: false

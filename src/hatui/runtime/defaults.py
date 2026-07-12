@@ -68,6 +68,7 @@ from hatui.widgets import (
     TabsWidget,
     TextWidget,
     TimelineWidget,
+    TreeWidget,
 )
 
 GENERIC_WIDGET_KEYS = {"focusable", "selectable", "focus_fg_color", "focus_bg_color", "keybindings"}
@@ -155,6 +156,7 @@ def create_widget_registry() -> WidgetRegistry:
     registry.register("text", lambda spec, loader: _build_plain(spec, loader, TextWidget), widget_cls=TextWidget)
     registry.register("label", lambda spec, loader: _build_plain(spec, loader, LabelWidget), widget_cls=LabelWidget)
     registry.register("list", lambda spec, loader: _build_plain(spec, loader, ListWidget), widget_cls=ListWidget)
+    registry.register("tree", lambda spec, loader: _build_plain(spec, loader, TreeWidget), widget_cls=TreeWidget)
     registry.register("menu", lambda spec, loader: _build_plain(spec, loader, MenuWidget), widget_cls=ListWidget)
     registry.register("paragraph", lambda spec, loader: _build_plain(spec, loader, ParagraphWidget), widget_cls=ParagraphWidget)
     registry.register("banner", lambda spec, loader: _build_plain(spec, loader, BannerWidget), widget_cls=BannerWidget)

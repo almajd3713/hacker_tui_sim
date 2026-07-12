@@ -16,20 +16,25 @@ class ScreenSpecLoader:
         self.widget_registry = widget_registry
         self.provider_registry = provider_registry
         self.validator = SpecValidator(widget_registry, provider_registry)
+        self.last_loaded_files: list[Path] = []
 
     def load_spec(self, spec_path: str | Path) -> dict[str, Any]:
         path = Path(spec_path).resolve()
         spec = self._load_yaml(path)
-        resolved = self._resolve_includes(spec, path.parent, chain=(path,))
+        loaded_files = {path}
+        resolved = self._resolve_includes(spec, path.parent, chain=(path,), loaded_files=loaded_files)
         if not isinstance(resolved, dict):
             raise ValueError("Top-level spec must resolve to an object")
         self.validator.raise_for_errors(resolved, spec_path=path)
+        self.last_loaded_files = sorted(loaded_files)
         return resolved
 
     def validate_spec(self, spec_path: str | Path) -> list:
         path = Path(spec_path).resolve()
         spec = self._load_yaml(path)
-        resolved = self._resolve_includes(spec, path.parent, chain=(path,))
+        loaded_files = {path}
+        resolved = self._resolve_includes(spec, path.parent, chain=(path,), loaded_files=loaded_files)
+        self.last_loaded_files = sorted(loaded_files)
         return self.validator.validate(resolved, spec_path=path)
 
     def load_theme(self, spec: dict[str, Any]) -> Theme:
@@ -49,6 +54,14 @@ class ScreenSpecLoader:
         if not isinstance(router, dict):
             raise ValueError("Top-level 'router' must be an object")
         return router
+
+    def load_dev(self, spec: dict[str, Any]) -> dict[str, Any]:
+        dev = spec.get("dev", {})
+        if dev is None:
+            return {}
+        if not isinstance(dev, dict):
+            raise ValueError("Top-level 'dev' must be an object")
+        return dev
 
     def load_providers(self, spec: dict[str, Any]) -> list[Any]:
         providers = []
@@ -80,11 +93,11 @@ class ScreenSpecLoader:
         with path.open("r", encoding="utf-8") as handle:
             return yaml.safe_load(handle) or {}
 
-    def _resolve_includes(self, node: Any, base_dir: Path, *, chain: tuple[Path, ...]) -> Any:
+    def _resolve_includes(self, node: Any, base_dir: Path, *, chain: tuple[Path, ...], loaded_files: set[Path]) -> Any:
         if isinstance(node, list):
             resolved_items = []
             for item in node:
-                resolved = self._resolve_includes(item, base_dir, chain=chain)
+                resolved = self._resolve_includes(item, base_dir, chain=chain, loaded_files=loaded_files)
                 if isinstance(resolved, list):
                     resolved_items.extend(resolved)
                 else:
@@ -101,11 +114,13 @@ class ScreenSpecLoader:
                 joined = " -> ".join(str(path) for path in (*chain, include_file))
                 raise ValueError(f"Circular include detected: {joined}")
 
+            loaded_files.add(include_file)
             included = self._load_yaml(include_file)
             included = self._resolve_includes(
                 included,
                 include_file.parent,
                 chain=(*chain, include_file),
+                loaded_files=loaded_files,
             )
 
             overrides = {key: value for key, value in node.items() if key != "include"}
@@ -116,10 +131,10 @@ class ScreenSpecLoader:
 
             merged = deepcopy(included)
             for key, value in overrides.items():
-                merged[key] = self._resolve_includes(value, base_dir, chain=chain)
+                merged[key] = self._resolve_includes(value, base_dir, chain=chain, loaded_files=loaded_files)
             return merged
 
         return {
-            key: self._resolve_includes(value, base_dir, chain=chain)
+            key: self._resolve_includes(value, base_dir, chain=chain, loaded_files=loaded_files)
             for key, value in node.items()
         }

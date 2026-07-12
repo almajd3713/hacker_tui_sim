@@ -131,18 +131,26 @@ class RootWidget(Widget):
 
     def _widget_snapshot(self, widget: Widget, context: WidgetContext) -> dict:
         rect = widget.properties["rect"]
+        focusable = bool(widget.focusable)
+        focused = widget.name == context.focused_widget
+        label = (
+            f"{'*' if focused else ' '} {'+' if focusable else '-'} "
+            f"{widget.name}<{widget.__class__.__name__}> [{rect.x},{rect.y} {rect.width}x{rect.height}]"
+        )
         return {
             "name": widget.name,
+            "widget_name": widget.name,
             "type": widget.__class__.__name__,
-            "focused": widget.name == context.focused_widget,
-            "focusable": bool(widget.focusable),
+            "label": label,
+            "focused": focused,
+            "focusable": focusable,
             "rect": {
                 "x": rect.x,
                 "y": rect.y,
                 "width": rect.width,
                 "height": rect.height,
             },
-            "children": [self._widget_snapshot(child, context) for child in widget.interaction_children()],
+            "children": [self._widget_snapshot(child, context) for child in widget.children],
         }
 
     def _widget_tree_lines(self, widgets: list[Widget], context: WidgetContext, depth: int = 0) -> list[str]:
@@ -155,7 +163,7 @@ class RootWidget(Widget):
                 f"{'  ' * depth}{marker}{focusable} {widget.name}<{widget.__class__.__name__}>"
                 f" [{rect.x},{rect.y} {rect.width}x{rect.height}]"
             )
-            lines.extend(self._widget_tree_lines(widget.interaction_children(), context, depth + 1))
+            lines.extend(self._widget_tree_lines(widget.children, context, depth + 1))
         return lines
 
     def focus_first(self, context: WidgetContext) -> bool:
@@ -253,6 +261,16 @@ class RootWidget(Widget):
         changed = self.router.pop()
         self._sync_focus(context)
         return changed
+
+    def route_pop_focus_widget(self, target: str | None, context: WidgetContext) -> bool:
+        if self.router is None:
+            return False
+        self._remember_focus(self._current_route(), context.focused_widget)
+        changed = self.router.pop()
+        if not changed:
+            return False
+        self._sync_focus(context)
+        return self.focus_widget(target, context)
 
     def store_set(self, path: str | None, value, context: WidgetContext) -> bool:
         if self.store is None or not path:

@@ -83,6 +83,9 @@ theme:
     list:
       selected_fg_color: "@selection_fg"
       selected_bg_color: "@selection_bg"
+    tree:
+      selected_fg_color: "@selection_fg"
+      selected_bg_color: "@selection_bg"
     table:
       header_color: "@text"
       selected_fg_color: "@selection_fg"
@@ -147,6 +150,14 @@ router:
     - debug_modal
     - help_modal
   initial: overview
+
+dev:
+  watch:
+    enabled: true
+    interval: 0.25
+    debounce: 0.2
+    paths:
+      - dashboard/**/*.yaml
 
 providers:
   include: dashboard/providers.yaml

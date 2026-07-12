@@ -40,6 +40,7 @@ from hatui.widgets.table_widget import TableWidget
 from hatui.widgets.tabs_widget import TabsWidget
 from hatui.widgets.text_widget import TextWidget
 from hatui.widgets.timeline_widget import TimelineWidget
+from hatui.widgets.tree_widget import TreeWidget
 from hatui.widgets.list_widget import ListWidget
 
 __all__ = [
@@ -84,4 +85,5 @@ __all__ = [
     "TabsWidget",
     "TextWidget",
     "TimelineWidget",
+    "TreeWidget",
 ]
