@@ -17,6 +17,8 @@ from hatui.providers.helpers import render_template, resolve_items, resolve_mapp
 
 
 class ConstantProvider(Provider):
+    spec_schema = {"value": object}
+
     def provide(self, delta_time: float, context):
         return self.spec.get("value")
 
@@ -47,6 +49,15 @@ class FrameProvider(Provider):
 
 
 class RandomProvider(Provider):
+    spec_schema = {
+        "mode": str,
+        "min": float,
+        "max": float,
+        "choices": list,
+        "count": int,
+        "step": float,
+    }
+
     def provide(self, delta_time: float, context):
         mode = self.spec.get("mode", "float")
         if mode == "int":
@@ -64,6 +75,16 @@ class RandomProvider(Provider):
 
 
 class WaveformProvider(Provider):
+    spec_schema = {
+        "phase": float,
+        "frequency": float,
+        "amplitude": float,
+        "offset": float,
+        "waveform": str,
+        "count": int,
+        "step": float,
+    }
+
     def provide(self, delta_time: float, context):
         phase = float(self.spec.get("phase", 0.0))
         frequency = float(self.spec.get("frequency", 1.0))
@@ -89,6 +110,8 @@ class WaveformProvider(Provider):
 
 
 class DemoLogsProvider(Provider):
+    spec_schema = {"messages": list, "max_lines": int}
+
     def setup(self, context):
         self.messages = self.spec.get(
             "messages",
@@ -112,6 +135,8 @@ class DemoLogsProvider(Provider):
 
 
 class EnvProvider(Provider):
+    spec_schema = {"key": str, "keys": list, "default": object}
+
     def provide(self, delta_time: float, context):
         key = self.spec.get("key")
         keys = self.spec.get("keys")
@@ -123,6 +148,9 @@ class EnvProvider(Provider):
 
 
 class FileProvider(Provider):
+    spec_schema = {"path": str, "mode": str}
+    required_spec_keys = {"path"}
+
     def provide(self, delta_time: float, context):
         path = Path(self.spec["path"])
         mode = self.spec.get("mode", "text")
@@ -145,6 +173,8 @@ class HostInfoProvider(Provider):
 
 
 class SystemStatsProvider(Provider):
+    spec_schema = {"path": str}
+
     def provide(self, delta_time: float, context):
         stats = {
             "cpu_count": os.cpu_count(),
@@ -168,6 +198,9 @@ class SystemStatsProvider(Provider):
 
 
 class CommandOutputProvider(Provider):
+    spec_schema = {"command": str, "mode": str}
+    required_spec_keys = {"command"}
+
     def provide(self, delta_time: float, context):
         result = subprocess.run(
             self.spec["command"],
@@ -189,12 +222,25 @@ class CommandOutputProvider(Provider):
 
 
 class HttpJsonProvider(Provider):
+    spec_schema = {"url": str, "timeout": float}
+    required_spec_keys = {"url"}
+
     def provide(self, delta_time: float, context):
         with urllib.request.urlopen(self.spec["url"], timeout=float(self.spec.get("timeout", 5.0))) as response:
             return json.loads(response.read().decode("utf-8"))
 
 
 class TransformProvider(Provider):
+    spec_schema = {
+        "items": list,
+        "mapping": dict,
+        "template": str,
+        "source": str,
+        "default": object,
+        "formatter": str,
+        "operations": list,
+    }
+
     def provide(self, delta_time: float, context):
         if "items" in self.spec:
             return resolve_items(self.spec.get("items", []), context.data)
@@ -215,21 +261,33 @@ class TransformProvider(Provider):
 
 
 class TemplateProvider(Provider):
+    spec_schema = {"template": str, "mapping": dict}
+    required_spec_keys = {"template"}
+
     def provide(self, delta_time: float, context):
         return render_template(self.spec.get("template", ""), self.spec.get("mapping", {}), context.data)
 
 
 class ComposeProvider(Provider):
+    spec_schema = {"mapping": dict}
+    required_spec_keys = {"mapping"}
+
     def provide(self, delta_time: float, context):
         return resolve_mapping(self.spec.get("mapping", {}), context.data)
 
 
 class RecordsProvider(Provider):
+    spec_schema = {"items": list}
+    required_spec_keys = {"items"}
+
     def provide(self, delta_time: float, context):
         return resolve_items(self.spec.get("items", []), context.data)
 
 
 class RollingWindowProvider(Provider):
+    spec_schema = {"source": str, "default": object, "size": int}
+    required_spec_keys = {"source"}
+
     def setup(self, context):
         self.values: list = []
 
@@ -244,6 +302,16 @@ class RollingWindowProvider(Provider):
 
 
 class ThresholdProvider(Provider):
+    spec_schema = {
+        "source": str,
+        "default": object,
+        "value": float,
+        "operator": str,
+        "true": object,
+        "false": object,
+    }
+    required_spec_keys = {"source"}
+
     def provide(self, delta_time: float, context):
         value = resolve_value_spec(
             {"source": self.spec.get("source"), "default": self.spec.get("default")},
@@ -267,10 +335,25 @@ class ThresholdProvider(Provider):
             matched = actual != compare
         else:
             matched = actual > compare
-        return self.spec.get("true") if matched else self.spec.get("false")
+        true_value = self.spec.get("true", self.spec.get(True))
+        false_value = self.spec.get("false", self.spec.get(False))
+        return true_value if matched else false_value
 
 
 class NormalizeStateProvider(Provider):
+    spec_schema = {
+        "source": str,
+        "default": object,
+        "state_key": str,
+        "severity_key": str,
+        "state_map": dict,
+        "severity_map": dict,
+        "severity_by_state": dict,
+        "default_state": str,
+        "default_severity": str,
+    }
+    required_spec_keys = {"source"}
+
     def provide(self, delta_time: float, context):
         source = resolve_value_spec(
             {"source": self.spec.get("source"), "default": self.spec.get("default", [])},
@@ -337,6 +420,17 @@ class NormalizeStateProvider(Provider):
 
 
 class BucketProvider(Provider):
+    spec_schema = {
+        "source": str,
+        "default": object,
+        "value_key": str,
+        "bucket_count": int,
+        "min": float,
+        "max": float,
+        "precision": int,
+    }
+    required_spec_keys = {"source"}
+
     def provide(self, delta_time: float, context):
         source = resolve_value_spec(
             {"source": self.spec.get("source"), "default": self.spec.get("default", [])},
@@ -399,6 +493,8 @@ class BucketProvider(Provider):
             return []
 
 class EventStreamProvider(Provider):
+    spec_schema = {"item": dict, "source": str, "default": object, "max_items": int}
+
     def setup(self, context):
         self.events: list[dict] = []
 
@@ -428,6 +524,9 @@ class EventStreamProvider(Provider):
 
 
 class GridHistoryProvider(Provider):
+    spec_schema = {"source": str, "default": object, "size": int}
+    required_spec_keys = {"source"}
+
     def setup(self, context):
         self.rows: list[list[float]] = []
 

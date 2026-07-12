@@ -115,3 +115,6 @@ class ScreenBuffer:
         frame = "".join(segments) + "\033[0m"
         sys.stdout.write(frame)
         sys.stdout.flush()
+
+    def to_plain_text(self) -> str:
+        return "\n".join("".join(cell.char for cell in row).rstrip() for row in self.buffer)

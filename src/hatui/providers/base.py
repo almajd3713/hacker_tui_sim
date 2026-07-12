@@ -17,6 +17,9 @@ VALUE_RESULT = "value"
 
 
 class Provider:
+    spec_schema: dict[str, object] = {}
+    required_spec_keys: set[str] = set()
+
     def __init__(self, spec: dict):
         self.spec = spec
         self.name = spec.get("name", spec.get("type", self.__class__.__name__))

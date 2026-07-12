@@ -116,6 +116,48 @@ class RootWidget(Widget):
         )
         self._sync_runtime_state(context)
 
+    def publish_debug_snapshot(self, context: WidgetContext):
+        focusables = self._focusable_widgets()
+        snapshot = {
+            "route": self._current_route(),
+            "focused_widget": context.focused_widget,
+            "last_key": context.last_key,
+            "last_modifiers": list(context.last_modifiers),
+            "focusables": [widget.name for widget in focusables],
+            "widget_tree": [self._widget_snapshot(child, context) for child in self.children],
+            "widget_tree_lines": self._widget_tree_lines(self.children, context),
+        }
+        set_path(context.data, "_debug", snapshot)
+
+    def _widget_snapshot(self, widget: Widget, context: WidgetContext) -> dict:
+        rect = widget.properties["rect"]
+        return {
+            "name": widget.name,
+            "type": widget.__class__.__name__,
+            "focused": widget.name == context.focused_widget,
+            "focusable": bool(widget.focusable),
+            "rect": {
+                "x": rect.x,
+                "y": rect.y,
+                "width": rect.width,
+                "height": rect.height,
+            },
+            "children": [self._widget_snapshot(child, context) for child in widget.interaction_children()],
+        }
+
+    def _widget_tree_lines(self, widgets: list[Widget], context: WidgetContext, depth: int = 0) -> list[str]:
+        lines: list[str] = []
+        for widget in widgets:
+            rect = widget.properties["rect"]
+            marker = "*" if widget.name == context.focused_widget else " "
+            focusable = " +" if widget.focusable else " -"
+            lines.append(
+                f"{'  ' * depth}{marker}{focusable} {widget.name}<{widget.__class__.__name__}>"
+                f" [{rect.x},{rect.y} {rect.width}x{rect.height}]"
+            )
+            lines.extend(self._widget_tree_lines(widget.interaction_children(), context, depth + 1))
+        return lines
+
     def focus_first(self, context: WidgetContext) -> bool:
         focusables = self._focusable_widgets()
         if not focusables:

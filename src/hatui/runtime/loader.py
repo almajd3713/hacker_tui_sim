@@ -8,12 +8,14 @@ import yaml
 
 from hatui.core.style import Theme, build_theme
 from hatui.runtime.registries import ProviderRegistry, WidgetRegistry
+from hatui.runtime.validation import SpecValidator
 
 
 class ScreenSpecLoader:
     def __init__(self, widget_registry: WidgetRegistry, provider_registry: ProviderRegistry):
         self.widget_registry = widget_registry
         self.provider_registry = provider_registry
+        self.validator = SpecValidator(widget_registry, provider_registry)
 
     def load_spec(self, spec_path: str | Path) -> dict[str, Any]:
         path = Path(spec_path).resolve()
@@ -21,7 +23,14 @@ class ScreenSpecLoader:
         resolved = self._resolve_includes(spec, path.parent, chain=(path,))
         if not isinstance(resolved, dict):
             raise ValueError("Top-level spec must resolve to an object")
+        self.validator.raise_for_errors(resolved, spec_path=path)
         return resolved
+
+    def validate_spec(self, spec_path: str | Path) -> list:
+        path = Path(spec_path).resolve()
+        spec = self._load_yaml(path)
+        resolved = self._resolve_includes(spec, path.parent, chain=(path,))
+        return self.validator.validate(resolved, spec_path=path)
 
     def load_theme(self, spec: dict[str, Any]) -> Theme:
         theme_spec = spec.get("theme", {})
