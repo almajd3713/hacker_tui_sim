@@ -4,14 +4,14 @@ child:
   name: help_modal
   width: 72
   height: 18
-  backdrop_bg_color: "#11131a"
+  backdrop_bg_color: "@surface_alt"
   child:
     type: box
     name: help_modal_box
     title: help overlay
     padding: 1
     style: rounded
-    fg_color: "#59d0ff"
+    fg_color: "@accent"
     child:
       type: column
       name: help_modal_column
@@ -23,8 +23,8 @@ child:
         - type: menu
           name: help_modal_menu
           bullet: "» "
-          selected_fg_color: "#10131a"
-          selected_bg_color: "#59d0ff"
+          selected_fg_color: "@selection_fg"
+          selected_bg_color: "@selection_bg"
           weight: 3
           items:
             - label: close overlay

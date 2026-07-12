@@ -1,13 +1,73 @@
 theme:
+  preset: clean_ops
+  colors:
+    text: "#d7d7e0"
+    text_muted: "#5a5a78"
+    surface: default
+    surface_alt: "#1d2533"
+    border: "#5a5a78"
+    accent: "#59d0ff"
+    accent_alt: "#cbb7ff"
+    accent_hot: "#ff4d6d"
+    focus_fg: "#59d0ff"
+    focus_bg: "#1d2533"
+    selection_fg: "#10131a"
+    selection_bg: "#59d0ff"
+    info: "#59d0ff"
+    warn: "#ffd166"
+    error: "#ff4d6d"
+    success: "#4de0a8"
+  fonts:
+    text: JetBrains Mono
+    border: JetBrains Mono
+    heading: JetBrains Mono
   border:
     style: sharp
-    fg_color: "#5a5a78"
-    bg_color: default
-    font_name: JetBrains Mono
   text:
-    fg_color: "#d7d7e0"
-    bg_color: default
-    font_name: JetBrains Mono
+    font_name: "@font:text"
+  widgets:
+    tabs:
+      fg_color: "@text_muted"
+      bg_color: "@surface"
+      active_fg_color: "@focus_fg"
+      active_bg_color: "@surface_alt"
+    status_strip:
+      fg_color: "@text"
+      bg_color: "@surface_alt"
+    stat:
+      accent_color: "@accent"
+    metric_grid:
+      accent_color: "@accent_alt"
+    progress_bar:
+      fill_color: "@accent"
+    alert:
+      info_fg_color: "@info"
+      warn_fg_color: "@warn"
+      error_fg_color: "@error"
+      success_fg_color: "@success"
+    list:
+      selected_fg_color: "@selection_fg"
+      selected_bg_color: "@selection_bg"
+    table:
+      header_color: "@text"
+      selected_fg_color: "@selection_fg"
+      selected_bg_color: "@selection_bg"
+    scroll:
+      scrollbar_fg_color: "@border"
+      scrollbar_bg_color: "@surface_alt"
+    code_block:
+      line_number_color: "@text_muted"
+    hex_dump:
+      offset_color: "@text_muted"
+    divider:
+      fg_color: "@border"
+      bg_color: "@surface"
+    log:
+      warn_fg_color: "@warn"
+      error_fg_color: "@error"
+      success_fg_color: "@success"
+    modal:
+      backdrop_bg_color: "#11131a"
 
 state:
   flags:

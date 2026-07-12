@@ -10,7 +10,7 @@ child:
       title_align: center
       padding: 1
       style: rounded
-      fg_color: "#9b4dff"
+      fg_color: "@accent_alt"
       weight: 4
       child:
         type: column
@@ -19,13 +19,13 @@ child:
           - type: banner
             name: header_banner
             text_key: ui.header_text
-            fg_color: "#cbb7ff"
+            fg_color: "@accent_alt"
             weight: 3
           - type: label
             name: header_label
             text_key: ui.header_subtitle
             align: center
-            fg_color: "#9e8be0"
+            fg_color: "@text_muted"
             weight: 1
     - type: row
       name: stats_row
@@ -41,7 +41,7 @@ child:
             name: cpu_stat
             label: load avg
             data_key: stats.cpu
-            accent_color: "#ff4d6d"
+            accent_color: "@error"
         - type: box
           name: mem_box
           title: memory
@@ -52,7 +52,7 @@ child:
             name: mem_stat
             label: resident
             data_key: stats.memory
-            accent_color: "#4de0a8"
+            accent_color: "@success"
         - type: box
           name: net_box
           title: network
@@ -63,7 +63,7 @@ child:
             name: net_stat
             label: rx / tx
             data_key: stats.network
-            accent_color: "#59d0ff"
+            accent_color: "@accent"
     - type: row
       name: telemetry_row
       weight: 7
@@ -79,13 +79,13 @@ child:
             children:
               - type: scroll
                 name: overview_text_scroll
-                focus_fg_color: "#59d0ff"
+                focus_fg_color: "@focus_fg"
                 weight: 3
                 child:
                   type: paragraph
                   name: overview_text
                   text_key: ui.overview_text
-                  fg_color: "#f2f2f7"
+                  fg_color: "@text"
               - type: alert
                 name: overview_alert
                 message_key: alerts.message
@@ -94,8 +94,8 @@ child:
               - type: menu
                 name: quick_actions
                 selected_index_key: selection.quick_action_index
-                selected_fg_color: "#10131a"
-                selected_bg_color: "#59d0ff"
+                selected_fg_color: "@selection_fg"
+                selected_bg_color: "@selection_bg"
                 bullet: "» "
                 weight: 2
                 items:
@@ -124,14 +124,14 @@ child:
                 label: deep scan
                 value_key: signals.scan_progress
                 show_percentage: true
-                fill_color: "#ff4d6d"
+                fill_color: "@error"
                 weight: 1
               - type: progress_bar
                 name: uplink_bar
                 label: uplink sync
                 value_key: signals.uplink_progress
                 show_percentage: true
-                fill_color: "#4de0a8"
+                fill_color: "@success"
                 weight: 1
         - type: box
           name: telemetry_box
@@ -145,17 +145,17 @@ child:
               - type: label
                 name: sparkline_label
                 text: packet burst
-                fg_color: "#f2f2f7"
+                fg_color: "@text"
                 weight: 1
               - type: sparkline
                 name: telemetry_sparkline
                 values_key: telemetry.packet_series
-                fg_color: "#59d0ff"
+                fg_color: "@accent"
                 weight: 1
               - type: mini_chart
                 name: telemetry_mini_chart
                 values_key: telemetry.mini_chart
-                fg_color: "#4de0a8"
+                fg_color: "@success"
                 weight: 4
               - type: paragraph
                 name: telemetry_copy

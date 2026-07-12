@@ -12,7 +12,7 @@ child:
       child:
         type: scroll
         name: log_scroll
-        focus_fg_color: "#59d0ff"
+        focus_fg_color: "@focus_fg"
         child:
           type: log
           name: log_widget
@@ -27,7 +27,7 @@ child:
       child:
         type: scroll
         name: logs_note_scroll
-        focus_fg_color: "#59d0ff"
+        focus_fg_color: "@focus_fg"
         child:
           type: paragraph
           name: logs_note
@@ -35,5 +35,5 @@ child:
     - type: status_strip
       name: logs_status_strip
       segments_key: ui.status_strip
-      bg_color: bright_black
+      bg_color: "@surface_alt"
       weight: 1

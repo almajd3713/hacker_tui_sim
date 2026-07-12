@@ -428,49 +428,49 @@
     - text:
         path: _ui.focused_widget
         template: "focus {value}"
-      fg_color: "#ffd166"
+      fg_color: "@warn"
     - text:
         path: _router.current
         template: "route {value}"
-      fg_color: "#ff8fab"
+      fg_color: "@accent_alt"
     - text:
         path: state.flags.compact_mode
         template: "compact {value}"
-      fg_color: "#9e8be0"
+      fg_color: "@text_muted"
     - text:
         path: state.selection.relay_index
         template: "relay #{value}"
-      fg_color: "#59d0ff"
+      fg_color: "@accent"
     - text:
         path: runtime.frame.frame
         formatter:
           name: fixed
           precision: 0
         template: "frame {value}"
-      fg_color: "#59d0ff"
+      fg_color: "@accent"
     - text:
         path: runtime.frame.delta_time
         formatter:
           name: fixed
           precision: 3
         template: "dt {value}ms"
-      fg_color: "#4de0a8"
+      fg_color: "@success"
     - text:
         path: signals.packet_sample
         formatter:
           name: fixed
           precision: 2
         template: "burst {value}"
-      fg_color: "#cbb7ff"
+      fg_color: "@accent_alt"
     - text:
         path: telemetry.provider_meta.packet_series.status
         template: "series {value}"
-      fg_color: "#ffd166"
+      fg_color: "@warn"
     - text:
         path: _ui.last_focused_by_route.overview
         template: "ovr {value}"
-      fg_color: "#9e8be0"
+      fg_color: "@text_muted"
     - text: "tab focus"
-      fg_color: "#9e8be0"
+      fg_color: "@text_muted"
     - text: "enter menu / j-k lists / arrows scroll"
-      fg_color: "#9e8be0"
+      fg_color: "@text_muted"

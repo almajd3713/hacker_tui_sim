@@ -9,8 +9,8 @@ child:
   type: tabs
   name: root_tabs
   show_tabs: true
-  focus_fg_color: "#59d0ff"
-  focus_bg_color: "#1d2533"
+  focus_fg_color: "@focus_fg"
+  focus_bg_color: "@focus_bg"
   keybindings:
     - key: "1"
       action: route_set
