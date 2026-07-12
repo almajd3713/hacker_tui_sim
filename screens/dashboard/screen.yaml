@@ -5,6 +5,10 @@ keybindings:
     action: route_push
     payload:
       route: help_modal
+  - key: d
+    action: route_push
+    payload:
+      route: debug_modal
 child:
   type: tabs
   name: root_tabs
@@ -44,6 +48,10 @@ child:
       action: route_push
       payload:
         route: help_modal
+    - key: d
+      action: route_push
+      payload:
+        route: debug_modal
   tabs:
     - include: tabs/overview.yaml
     - include: tabs/forensics.yaml
@@ -52,4 +60,5 @@ child:
     - include: tabs/hacker.yaml
     - include: tabs/logs.yaml
 modals:
+  - include: modals/debug.yaml
   - include: modals/help.yaml

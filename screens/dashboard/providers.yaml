@@ -66,6 +66,11 @@
     This is the base for future inspectors, command palettes, confirmations, and transient workflows.
 
 - type: constant
+  name: debug_help_text
+  target: ui.debug_help_text
+  value: Press d to open the runtime debug overlay with widget tree and provider state snapshots.
+
+- type: constant
   name: hex_dump
   target: panels.hex_dump
   value: [77, 83, 89, 83, 45, 52, 10, 123, 114, 101, 108, 97, 121, 58, 51, 125, 59, 10, 255, 0, 126, 65, 66]
@@ -476,7 +481,7 @@
       fg_color: "@accent_alt"
     - text: "tab focus"
       fg_color: "@text_muted"
-    - text: "1-6 tabs / enter menu / j-k lists / arrows scroll"
+    - text: "1-6 tabs / d debug / h help / enter menu / j-k lists / arrows scroll"
       fg_color: "@text_muted"
 
 - include: providers/phase8.yaml

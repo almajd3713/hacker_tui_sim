@@ -144,6 +144,7 @@ router:
     - analysis
     - hacker
     - logs
+    - debug_modal
     - help_modal
   initial: overview
 

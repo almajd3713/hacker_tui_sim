@@ -1,0 +1,53 @@
+route: debug_modal
+child:
+  type: modal
+  name: debug_modal
+  width: 108
+  height: 24
+  backdrop_bg_color: "@surface_alt"
+  child:
+    type: box
+    name: debug_modal_box
+    title: runtime debug
+    padding: 1
+    style: rounded
+    fg_color: "@accent"
+    child:
+      type: column
+      name: debug_modal_column
+      children:
+        - type: row
+          name: debug_modal_body
+          weight: 8
+          children:
+            - type: box
+              name: debug_tree_box
+              title: widget tree
+              padding: 1
+              weight: 5
+              child:
+                type: list
+                name: debug_tree_list
+                items_key: _debug.widget_tree_lines
+                show_bullet: false
+                focusable: false
+            - type: box
+              name: debug_provider_box
+              title: providers
+              padding: 1
+              weight: 5
+              child:
+                type: inspector
+                name: debug_provider_inspector
+                data_key: _providers
+                focusable: false
+        - type: box
+          name: debug_runtime_box
+          title: runtime
+          padding: 1
+          weight: 4
+          child:
+            type: inspector
+            name: debug_runtime_inspector
+            data_key: _debug
+            focusable: false
