@@ -79,7 +79,7 @@ def build_runtime(
     root_widget.focus_first(root_widget.context)
     if preserved_focus:
         root_widget.context.focused_widget = preserved_focus
-    root_widget._sync_focus(root_widget.context)
+    root_widget.sync_focus(root_widget.context)
 
     return BootstrapResult(
         store=store,

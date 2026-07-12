@@ -130,6 +130,6 @@ class AppEngine:
         self.stats.widget_update_ms = round((time.perf_counter() - widget_started) * 1000.0, 3)
 
         focus_started = time.perf_counter()
-        app.root_widget._sync_focus(context)
+        app.root_widget.sync_focus(context)
         self.stats.focus_sync_ms = round((time.perf_counter() - focus_started) * 1000.0, 3)
         self._last_frame_time = now

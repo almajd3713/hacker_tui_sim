@@ -101,8 +101,19 @@ class SpecValidator:
         routes = router.get("routes")
         if routes is not None and not isinstance(routes, list):
             messages.append(ValidationMessage(f"{path}.routes", "expected a list"))
+        elif isinstance(routes, list):
+            seen: set[str] = set()
+            for index, route in enumerate(routes):
+                if not isinstance(route, str):
+                    messages.append(ValidationMessage(f"{path}.routes[{index}]", "expected a string"))
+                    continue
+                if route in seen:
+                    messages.append(ValidationMessage(f"{path}.routes[{index}]", f"duplicate route '{route}'"))
+                seen.add(route)
         if "initial" in router and not isinstance(router["initial"], str):
             messages.append(ValidationMessage(f"{path}.initial", "expected a string"))
+        elif isinstance(routes, list) and isinstance(router.get("initial"), str) and router["initial"] not in routes:
+            messages.append(ValidationMessage(f"{path}.initial", f"unknown initial route '{router['initial']}'"))
 
     def _validate_dev(self, dev: Any, path: str, messages: list[ValidationMessage]) -> None:
         if dev is None:
@@ -139,6 +150,7 @@ class SpecValidator:
         if not isinstance(providers, list):
             messages.append(ValidationMessage(path, "expected a list"))
             return
+        provider_names: set[str] = set()
         for index, provider in enumerate(providers):
             item_path = f"{path}[{index}]"
             if not isinstance(provider, dict):
@@ -151,6 +163,11 @@ class SpecValidator:
             if not isinstance(provider_type, str):
                 messages.append(ValidationMessage(f"{item_path}.type", "expected a string"))
                 continue
+            provider_name = provider.get("name")
+            if isinstance(provider_name, str):
+                if provider_name in provider_names:
+                    messages.append(ValidationMessage(f"{item_path}.name", f"duplicate provider name '{provider_name}'"))
+                provider_names.add(provider_name)
             provider_cls = self.provider_registry.get(provider_type)
             if provider_cls is None:
                 known = ", ".join(self.provider_registry.registered_types())
@@ -197,8 +214,33 @@ class SpecValidator:
         self._validate_mapping_keys(spec, allowed_keys, path, messages, ignored={"include"})
         self._validate_required_keys(spec, required_keys, path, messages)
         self._validate_typed_mapping(spec, signature_schema, path, messages)
+        self._validate_keybindings(spec.get("keybindings"), f"{path}.keybindings", messages)
 
         self._validate_nested_widgets(registration, spec, path, messages)
+
+    def _validate_keybindings(self, keybindings: Any, path: str, messages: list[ValidationMessage]) -> None:
+        if keybindings is None:
+            return
+        if not isinstance(keybindings, list):
+            messages.append(ValidationMessage(path, "expected a list"))
+            return
+        for index, item in enumerate(keybindings):
+            item_path = f"{path}[{index}]"
+            if isinstance(item, str):
+                if not item.strip():
+                    messages.append(ValidationMessage(item_path, "keybinding string must not be empty"))
+                continue
+            if not isinstance(item, dict):
+                messages.append(ValidationMessage(item_path, "expected a string or object"))
+                continue
+            if not isinstance(item.get("key"), str) or not str(item.get("key", "")).strip():
+                messages.append(ValidationMessage(f"{item_path}.key", "expected a non-empty string"))
+            action = item.get("action")
+            if action is not None and not isinstance(action, str):
+                messages.append(ValidationMessage(f"{item_path}.action", "expected a string"))
+            payload = item.get("payload")
+            if payload is not None and not isinstance(payload, dict):
+                messages.append(ValidationMessage(f"{item_path}.payload", "expected an object"))
 
     def _validate_nested_widgets(
         self,

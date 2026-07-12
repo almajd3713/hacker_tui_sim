@@ -1,6 +1,7 @@
 from hatui.core.widget import Widget, WidgetContext
 from hatui.core.style import Theme
-from hatui.runtime.bindings import set_path
+from hatui.runtime.action_registry import create_default_action_registry
+from hatui.widgets.root_services import DebugSnapshotBuilder, RootInteractionController
 
 class RootWidget(Widget):
     """
@@ -21,6 +22,9 @@ class RootWidget(Widget):
         self.context = WidgetContext(name=name, version="1.0.0", theme=theme or Theme())
         self.store = store
         self.router = router
+        self.action_registry = create_default_action_registry()
+        self.interaction = RootInteractionController(self)
+        self.debug_snapshots = DebugSnapshotBuilder(self)
         self.state["last_focused_by_route"] = {}
         self.state["_refreshing_interaction"] = False
         self.configure_interaction(
@@ -54,266 +58,66 @@ class RootWidget(Widget):
         if self.children:
             self.children[0].paint(buffer, context)
 
-    def _focusable_widgets(self) -> list[Widget]:
-        widgets = []
-        for child in self.children:
-            widgets.extend(child.focusable_widgets())
-        return widgets
+    def dispatch_action(self, action: str, payload: dict, source: Widget, context: WidgetContext) -> bool:
+        return self.action_registry.dispatch(action, source, payload, context)
 
-    def _current_route(self) -> str | None:
-        if self.router is None:
-            return None
-        return self.router.current
+    def sync_focus(self, context: WidgetContext):
+        self.interaction.sync_focus(context)
 
-    def _sync_runtime_state(self, context: WidgetContext):
-        if self.store is not None:
-            self.store.sync_to_context(context)
-        if self.router is not None:
-            self.router.sync_to_context(context)
-
-    def _refresh_interaction_state(self, context: WidgetContext):
-        self._sync_runtime_state(context)
-        self.state["_refreshing_interaction"] = True
-        try:
-            self.update_children(0.0, context)
-        finally:
-            self.state["_refreshing_interaction"] = False
-
-    def _remember_focus(self, route: str | None, focused_widget: str | None):
-        if not route or not focused_widget:
-            return
-        self.state.setdefault("last_focused_by_route", {})
-        self.state["last_focused_by_route"][route] = focused_widget
-
-    def _restore_focus(self, route: str | None, names: list[str]) -> bool:
-        if not route:
-            return False
-        target = self.state.get("last_focused_by_route", {}).get(route)
-        if target in names:
-            self.context.focused_widget = target
-            return True
-        return False
-
-    def _sync_focus(self, context: WidgetContext):
-        self._refresh_interaction_state(context)
-        focusables = self._focusable_widgets()
-        focusable_names = [widget.name for widget in focusables]
-        focused = context.focused_widget
-        route = self._current_route()
-        if focusables and focused not in set(focusable_names):
-            if not self._restore_focus(route, focusable_names):
-                context.focused_widget = focusables[0].name
-        if not focusables:
-            context.focused_widget = None
-        if context.focused_widget in focusable_names:
-            self._remember_focus(route, context.focused_widget)
-        context.data.setdefault("_ui", {})
-        set_path(context.data, "_ui.focused_widget", context.focused_widget)
-        set_path(
-            context.data,
-            "_ui.last_focused_by_route",
-            dict(self.state.get("last_focused_by_route", {})),
-        )
-        self._sync_runtime_state(context)
+    def sync_runtime_state(self, context: WidgetContext):
+        self.interaction.sync_runtime_state(context)
 
     def publish_debug_snapshot(self, context: WidgetContext):
-        focusables = self._focusable_widgets()
-        snapshot = {
-            "route": self._current_route(),
-            "focused_widget": context.focused_widget,
-            "last_key": context.last_key,
-            "last_modifiers": list(context.last_modifiers),
-            "focusables": [widget.name for widget in focusables],
-            "widget_tree": [self._widget_snapshot(child, context) for child in self.children],
-            "widget_tree_lines": self._widget_tree_lines(self.children, context),
-        }
-        set_path(context.data, "_debug", snapshot)
-
-    def _widget_snapshot(self, widget: Widget, context: WidgetContext) -> dict:
-        rect = widget.properties["rect"]
-        focusable = bool(widget.focusable)
-        focused = widget.name == context.focused_widget
-        label = (
-            f"{'*' if focused else ' '} {'+' if focusable else '-'} "
-            f"{widget.name}<{widget.__class__.__name__}> [{rect.x},{rect.y} {rect.width}x{rect.height}]"
-        )
-        return {
-            "name": widget.name,
-            "widget_name": widget.name,
-            "type": widget.__class__.__name__,
-            "label": label,
-            "focused": focused,
-            "focusable": focusable,
-            "rect": {
-                "x": rect.x,
-                "y": rect.y,
-                "width": rect.width,
-                "height": rect.height,
-            },
-            "children": [self._widget_snapshot(child, context) for child in widget.children],
-        }
-
-    def _widget_tree_lines(self, widgets: list[Widget], context: WidgetContext, depth: int = 0) -> list[str]:
-        lines: list[str] = []
-        for widget in widgets:
-            rect = widget.properties["rect"]
-            marker = "*" if widget.name == context.focused_widget else " "
-            focusable = " +" if widget.focusable else " -"
-            lines.append(
-                f"{'  ' * depth}{marker}{focusable} {widget.name}<{widget.__class__.__name__}>"
-                f" [{rect.x},{rect.y} {rect.width}x{rect.height}]"
-            )
-            lines.extend(self._widget_tree_lines(widget.children, context, depth + 1))
-        return lines
+        self.debug_snapshots.publish(context)
 
     def focus_first(self, context: WidgetContext) -> bool:
-        focusables = self._focusable_widgets()
-        if not focusables:
-            context.focused_widget = None
-            return False
-        context.focused_widget = focusables[0].name
-        self._sync_focus(context)
-        return True
+        return self.interaction.focus_first(context)
 
     def focus_last(self, context: WidgetContext) -> bool:
-        focusables = self._focusable_widgets()
-        if not focusables:
-            context.focused_widget = None
-            return False
-        context.focused_widget = focusables[-1].name
-        self._sync_focus(context)
-        return True
+        return self.interaction.focus_last(context)
 
     def focus_next(self, context: WidgetContext) -> bool:
-        focusables = self._focusable_widgets()
-        if not focusables:
-            context.focused_widget = None
-            return False
-        names = [widget.name for widget in focusables]
-        if context.focused_widget not in names:
-            context.focused_widget = names[0]
-        else:
-            index = names.index(context.focused_widget)
-            context.focused_widget = names[(index + 1) % len(names)]
-        self._sync_focus(context)
-        return True
+        return self.interaction.focus_next(context)
 
     def focus_prev(self, context: WidgetContext) -> bool:
-        focusables = self._focusable_widgets()
-        if not focusables:
-            context.focused_widget = None
-            return False
-        names = [widget.name for widget in focusables]
-        if context.focused_widget not in names:
-            context.focused_widget = names[-1]
-        else:
-            index = names.index(context.focused_widget)
-            context.focused_widget = names[(index - 1) % len(names)]
-        self._sync_focus(context)
-        return True
+        return self.interaction.focus_prev(context)
 
     def focus_widget(self, target: str | None, context: WidgetContext) -> bool:
-        if not target:
-            return False
-        for widget in self._focusable_widgets():
-            if widget.name == target:
-                context.focused_widget = target
-                self._sync_focus(context)
-                return True
-        return False
+        return self.interaction.focus_widget(target, context)
 
     def route_set(self, route: str | None, context: WidgetContext) -> bool:
-        if self.router is None or not route:
-            return False
-        self._remember_focus(self._current_route(), context.focused_widget)
-        changed = self.router.set_current(route)
-        self._sync_focus(context)
-        return changed
+        return self.interaction.route_set(route, context)
 
     def route_next(self, context: WidgetContext) -> bool:
-        if self.router is None:
-            return False
-        self._remember_focus(self._current_route(), context.focused_widget)
-        changed = self.router.next()
-        self._sync_focus(context)
-        return changed
+        return self.interaction.route_next(context)
 
     def route_prev(self, context: WidgetContext) -> bool:
-        if self.router is None:
-            return False
-        self._remember_focus(self._current_route(), context.focused_widget)
-        changed = self.router.previous()
-        self._sync_focus(context)
-        return changed
+        return self.interaction.route_prev(context)
 
     def route_push(self, route: str | None, context: WidgetContext) -> bool:
-        if self.router is None or not route:
-            return False
-        self._remember_focus(self._current_route(), context.focused_widget)
-        changed = self.router.push(route)
-        self._sync_focus(context)
-        return changed
+        return self.interaction.route_push(route, context)
 
     def route_pop(self, context: WidgetContext) -> bool:
-        if self.router is None:
-            return False
-        self._remember_focus(self._current_route(), context.focused_widget)
-        changed = self.router.pop()
-        self._sync_focus(context)
-        return changed
+        return self.interaction.route_pop(context)
 
     def route_pop_focus_widget(self, target: str | None, context: WidgetContext) -> bool:
-        if self.router is None:
-            return False
-        self._remember_focus(self._current_route(), context.focused_widget)
-        changed = self.router.pop()
-        if not changed:
-            return False
-        self._sync_focus(context)
-        return self.focus_widget(target, context)
+        return self.interaction.route_pop_focus_widget(target, context)
 
     def store_set(self, path: str | None, value, context: WidgetContext) -> bool:
-        if self.store is None or not path:
-            return False
-        self.store.set(path, value)
-        if self.state.get("_refreshing_interaction"):
-            self._sync_runtime_state(context)
-            return True
-        self._sync_focus(context)
-        return True
+        return self.interaction.store_set(path, value, context)
 
     def store_toggle(self, path: str | None, context: WidgetContext) -> bool:
-        if self.store is None or not path:
-            return False
-        self.store.toggle(path)
-        if self.state.get("_refreshing_interaction"):
-            self._sync_runtime_state(context)
-            return True
-        self._sync_focus(context)
-        return True
-
-    def _target_widget(self, context: WidgetContext) -> Widget:
-        self._sync_focus(context)
-        if not context.focused_widget:
-            return self
-
-        queue = list(self.children)
-        while queue:
-            widget = queue.pop(0)
-            if widget.name == context.focused_widget:
-                return widget
-            queue.extend(widget.interaction_children())
-        return self
+        return self.interaction.store_toggle(path, context)
 
     def dispatch_key_event(self, key: str, modifiers: list[str], context: WidgetContext) -> bool:
-        self._sync_focus(context)
-        current: Widget | None = self._target_widget(context)
+        self.interaction.sync_focus(context)
+        current: Widget | None = self.interaction.target_widget(context)
         while current is not None:
             if current.dispatch_keybindings(key, modifiers, context):
-                self._sync_focus(context)
+                self.interaction.sync_focus(context)
                 return True
             if current.handle_input(key, modifiers, context):
-                self._sync_focus(context)
+                self.interaction.sync_focus(context)
                 return True
             current = current.parent
         return False
