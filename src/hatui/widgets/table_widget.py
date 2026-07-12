@@ -1,4 +1,4 @@
-from hatui.core.style import Style, resolve_style
+from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
 
@@ -179,7 +179,9 @@ class TableWidget(Widget):
         if rect.width <= 0 or rect.height <= 0 or not self.columns:
             return
 
-        base_style = resolve_style(
+        base_style = themed_style(
+            context.theme,
+            "table",
             fg_color=self.fg_color,
             bg_color=self.bg_color,
             fallback=Style(
@@ -187,14 +189,18 @@ class TableWidget(Widget):
                 bg_color=context.theme.text.bg_color,
             ),
         )
-        header_style = resolve_style(
-            fg_color=self.header_color or context.theme.border.fg_color,
+        header_style = themed_style(
+            context.theme,
+            "table",
+            fg_color=self.header_color or context.theme.widget_slot("table", "header_color", context.theme.border.fg_color),
             bg_color=base_style.bg_color,
             fallback=base_style,
         )
-        selected_style = resolve_style(
-            fg_color=self.selected_fg_color or self.focus_fg_color or "#ffffff",
-            bg_color=self.selected_bg_color or self.focus_bg_color or context.theme.border.bg_color,
+        selected_style = themed_style(
+            context.theme,
+            "table",
+            fg_color=self.selected_fg_color or self.focus_fg_color or context.theme.widget_slot("table", "selected_fg_color", context.theme.color("selection_fg", "#ffffff")),
+            bg_color=self.selected_bg_color or self.focus_bg_color or context.theme.widget_slot("table", "selected_bg_color", context.theme.color("selection_bg", context.theme.border.bg_color)),
             fallback=base_style,
         )
 

@@ -1,4 +1,4 @@
-from hatui.core.style import Style, resolve_style
+from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 
 
@@ -45,7 +45,9 @@ class DividerWidget(Widget):
         if rect.width <= 0 or rect.height <= 0:
             return
 
-        style = resolve_style(
+        style = themed_style(
+            context.theme,
+            "divider",
             fg_color=self.fg_color,
             bg_color=self.bg_color,
             fallback=Style(

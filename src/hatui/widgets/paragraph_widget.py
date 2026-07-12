@@ -1,6 +1,6 @@
 import textwrap
 
-from hatui.core.style import Style, resolve_style
+from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
 
@@ -78,7 +78,9 @@ class ParagraphWidget(Widget):
             return
 
         lines = self._wrapped_lines(rect.width)[: rect.height]
-        style = resolve_style(
+        style = themed_style(
+            context.theme,
+            "paragraph",
             fg_color=self.fg_color,
             bg_color=self.bg_color,
             font_name=self.font_name,

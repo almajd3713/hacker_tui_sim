@@ -1,4 +1,4 @@
-from hatui.core.style import Style, resolve_style
+from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
 
@@ -137,7 +137,9 @@ class TabsWidget(Widget):
     def _strip_styles(self, context: WidgetContext) -> tuple[Style, Style]:
         focused_fg = self.focus_fg_color if self.is_focused(context) and self.focus_fg_color is not None else None
         focused_bg = self.focus_bg_color if self.is_focused(context) and self.focus_bg_color is not None else None
-        base = resolve_style(
+        base = themed_style(
+            context.theme,
+            "tabs",
             fg_color=focused_fg or self.fg_color,
             bg_color=focused_bg or self.bg_color,
             fallback=Style(
@@ -145,9 +147,13 @@ class TabsWidget(Widget):
                 bg_color=context.theme.border.bg_color,
             ),
         )
-        active = resolve_style(
+        active = themed_style(
+            context.theme,
+            "tabs",
             fg_color=focused_fg or self.active_fg_color,
             bg_color=focused_bg or self.active_bg_color,
+            fg_slot="active_fg_color",
+            bg_slot="active_bg_color",
             fallback=Style(
                 fg_color="#ffffff",
                 bg_color="#3a3f58",

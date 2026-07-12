@@ -1,5 +1,5 @@
 from hatui.core.widget import Widget, WidgetContext
-from hatui.core.style import Style, resolve_style
+from hatui.core.style import Style, themed_style
 
 
 class TextWidget(Widget):
@@ -49,7 +49,9 @@ class TextWidget(Widget):
             return
 
         clipped_text = self.text[:rect.width]
-        style = resolve_style(
+        style = themed_style(
+            context.theme,
+            "text",
             fg_color=self.fg_color,
             bg_color=self.bg_color,
             font_name=self.font_name,

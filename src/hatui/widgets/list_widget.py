@@ -1,4 +1,4 @@
-from hatui.core.style import Style, resolve_style
+from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
 
@@ -164,7 +164,9 @@ class ListWidget(Widget):
         if rect.width <= 0 or rect.height <= 0:
             return
 
-        base_style = resolve_style(
+        base_style = themed_style(
+            context.theme,
+            "list",
             fg_color=self.fg_color,
             bg_color=self.bg_color,
             fallback=Style(
@@ -172,9 +174,11 @@ class ListWidget(Widget):
                 bg_color=context.theme.text.bg_color,
             ),
         )
-        selected_style = resolve_style(
-            fg_color=self.selected_fg_color or self.focus_fg_color or "#ffffff",
-            bg_color=self.selected_bg_color or self.focus_bg_color or context.theme.border.bg_color,
+        selected_style = themed_style(
+            context.theme,
+            "list",
+            fg_color=self.selected_fg_color or self.focus_fg_color or context.theme.widget_slot("list", "selected_fg_color", context.theme.color("selection_fg", "#ffffff")),
+            bg_color=self.selected_bg_color or self.focus_bg_color or context.theme.widget_slot("list", "selected_bg_color", context.theme.color("selection_bg", context.theme.border.bg_color)),
             fallback=base_style,
         )
 

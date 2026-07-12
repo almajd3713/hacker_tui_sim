@@ -1,4 +1,4 @@
-from hatui.core.style import Style, resolve_style
+from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
 
@@ -59,7 +59,9 @@ class MetricGridWidget(Widget):
         if rect.width <= 0 or rect.height <= 0 or not metrics:
             return
 
-        base_style = resolve_style(
+        base_style = themed_style(
+            context.theme,
+            "metric_grid",
             fg_color=self.fg_color,
             bg_color=self.bg_color,
             fallback=Style(
@@ -67,8 +69,10 @@ class MetricGridWidget(Widget):
                 bg_color=context.theme.text.bg_color,
             ),
         )
-        accent_style = resolve_style(
-            fg_color=self.accent_color or base_style.fg_color,
+        accent_style = themed_style(
+            context.theme,
+            "metric_grid",
+            fg_color=self.accent_color or context.theme.widget_slot("metric_grid", "accent_color", base_style.fg_color),
             bg_color=base_style.bg_color,
             fallback=base_style,
         )

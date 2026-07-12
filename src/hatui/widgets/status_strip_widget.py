@@ -1,4 +1,4 @@
-from hatui.core.style import Style, resolve_style
+from hatui.core.style import Style, resolve_color_token, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
 
@@ -51,7 +51,9 @@ class StatusStripWidget(Widget):
         if rect.width <= 0 or rect.height <= 0:
             return
 
-        base_style = resolve_style(
+        base_style = themed_style(
+            context.theme,
+            "status_strip",
             fg_color=self.fg_color,
             bg_color=self.bg_color,
             fallback=Style(
@@ -72,8 +74,8 @@ class StatusStripWidget(Widget):
                 cursor_x += len(sep)
             if isinstance(segment, dict):
                 text = str(segment.get("text", ""))
-                fg = segment.get("fg_color", base_style.fg_color)
-                bg = segment.get("bg_color", base_style.bg_color)
+                fg = resolve_color_token(segment.get("fg_color"), context.theme, base_style.fg_color)
+                bg = resolve_color_token(segment.get("bg_color"), context.theme, base_style.bg_color)
             else:
                 text = str(segment)
                 fg = base_style.fg_color

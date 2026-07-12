@@ -1,4 +1,4 @@
-from hatui.core.style import Style, resolve_style
+from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
 
@@ -56,7 +56,9 @@ class HexDumpWidget(Widget):
         if rect.width <= 0 or rect.height <= 0 or not data:
             return
 
-        base_style = resolve_style(
+        base_style = themed_style(
+            context.theme,
+            "hex_dump",
             fg_color=self.fg_color,
             bg_color=self.bg_color,
             fallback=Style(
@@ -64,8 +66,10 @@ class HexDumpWidget(Widget):
                 bg_color=context.theme.text.bg_color,
             ),
         )
-        offset_style = resolve_style(
-            fg_color=self.offset_color or context.theme.border.fg_color,
+        offset_style = themed_style(
+            context.theme,
+            "hex_dump",
+            fg_color=self.offset_color or context.theme.widget_slot("hex_dump", "offset_color", context.theme.border.fg_color),
             bg_color=base_style.bg_color,
             fallback=base_style,
         )

@@ -1,4 +1,4 @@
-from hatui.core.style import Style, resolve_style
+from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
 
@@ -84,7 +84,9 @@ class LabelWidget(Widget):
         else:
             x = rect.x
 
-        style = resolve_style(
+        style = themed_style(
+            context.theme,
+            "label",
             fg_color=self.fg_color,
             bg_color=self.bg_color,
             font_name=self.font_name,

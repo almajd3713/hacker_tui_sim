@@ -1,4 +1,4 @@
-from hatui.core.style import Style, resolve_style
+from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
 
@@ -74,7 +74,9 @@ class LogWidget(Widget):
         if rect.width <= 0 or rect.height <= 0:
             return
 
-        base_style = resolve_style(
+        base_style = themed_style(
+            context.theme,
+            "log",
             fg_color=self.fg_color,
             bg_color=self.bg_color,
             fallback=Style(
@@ -87,8 +89,11 @@ class LogWidget(Widget):
 
         for index, entry in enumerate(visible):
             text, level_color = self._format_line(entry)
-            line_style = resolve_style(
-                fg_color=level_color or base_style.fg_color,
+            themed_level = context.theme.widget_slot("log", f"{entry.get('level', 'info') if isinstance(entry, dict) else 'info'}_fg_color", None)
+            line_style = themed_style(
+                context.theme,
+                "log",
+                fg_color=themed_level or level_color or base_style.fg_color,
                 bg_color=base_style.bg_color,
                 fallback=base_style,
             )

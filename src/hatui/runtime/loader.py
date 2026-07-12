@@ -6,7 +6,7 @@ from typing import Any
 
 import yaml
 
-from hatui.core.style import BorderTheme, TextTheme, Theme
+from hatui.core.style import Theme, build_theme
 from hatui.runtime.registries import ProviderRegistry, WidgetRegistry
 
 
@@ -25,12 +25,7 @@ class ScreenSpecLoader:
 
     def load_theme(self, spec: dict[str, Any]) -> Theme:
         theme_spec = spec.get("theme", {})
-        border_spec = theme_spec.get("border", {})
-        text_spec = theme_spec.get("text", {})
-        return Theme(
-            border=BorderTheme(**border_spec),
-            text=TextTheme(**text_spec),
-        )
+        return build_theme(theme_spec)
 
     def load_state(self, spec: dict[str, Any]) -> dict[str, Any]:
         state = spec.get("state", {})

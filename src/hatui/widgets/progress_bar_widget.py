@@ -1,4 +1,4 @@
-from hatui.core.style import Style, resolve_style
+from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
 
@@ -68,7 +68,9 @@ class ProgressBarWidget(Widget):
         if rect.width <= 0 or rect.height <= 0:
             return
 
-        base_style = resolve_style(
+        base_style = themed_style(
+            context.theme,
+            "progress_bar",
             fg_color=self.fg_color,
             bg_color=self.bg_color,
             fallback=Style(
@@ -76,8 +78,10 @@ class ProgressBarWidget(Widget):
                 bg_color=context.theme.text.bg_color,
             ),
         )
-        fill_style = resolve_style(
-            fg_color=self.fill_color or base_style.fg_color,
+        fill_style = themed_style(
+            context.theme,
+            "progress_bar",
+            fg_color=self.fill_color or context.theme.widget_slot("progress_bar", "fill_color", base_style.fg_color),
             bg_color=base_style.bg_color,
             fallback=base_style,
         )

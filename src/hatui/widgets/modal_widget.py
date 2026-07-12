@@ -1,4 +1,4 @@
-from hatui.core.style import Style, resolve_style
+from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 
 
@@ -94,7 +94,9 @@ class ModalWidget(Widget):
             return
 
         if self.show_backdrop:
-            backdrop_style = resolve_style(
+            backdrop_style = themed_style(
+                context.theme,
+                "modal",
                 fg_color=self.backdrop_fg_color,
                 bg_color=self.backdrop_bg_color,
                 fallback=Style(

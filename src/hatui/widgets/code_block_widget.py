@@ -1,4 +1,4 @@
-from hatui.core.style import Style, resolve_style
+from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
 
@@ -59,7 +59,9 @@ class CodeBlockWidget(Widget):
         if rect.width <= 0 or rect.height <= 0:
             return
 
-        base_style = resolve_style(
+        base_style = themed_style(
+            context.theme,
+            "code_block",
             fg_color=self.fg_color,
             bg_color=self.bg_color,
             fallback=Style(
@@ -67,8 +69,10 @@ class CodeBlockWidget(Widget):
                 bg_color=context.theme.text.bg_color,
             ),
         )
-        number_style = resolve_style(
-            fg_color=self.line_number_color or context.theme.border.fg_color,
+        number_style = themed_style(
+            context.theme,
+            "code_block",
+            fg_color=self.line_number_color or context.theme.widget_slot("code_block", "line_number_color", context.theme.border.fg_color),
             bg_color=base_style.bg_color,
             fallback=base_style,
         )

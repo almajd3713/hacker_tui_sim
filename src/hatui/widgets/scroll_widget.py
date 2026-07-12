@@ -1,4 +1,4 @@
-from hatui.core.style import Style, resolve_style
+from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
 
@@ -177,7 +177,9 @@ class ScrollWidget(Widget):
         viewport_height = rect.height
         content_height = max(self.state.get("content_height", viewport_height), 1)
         scroll_y = self.state.get("scroll_y", 0)
-        base_style = resolve_style(
+        base_style = themed_style(
+            context.theme,
+            "scroll",
             fg_color=self.scrollbar_fg_color,
             bg_color=self.scrollbar_bg_color,
             fallback=Style(
@@ -200,9 +202,11 @@ class ScrollWidget(Widget):
             max_scroll = max(content_height - viewport_height, 1)
             thumb_start = ((viewport_height - thumb_height) * scroll_y) // max_scroll
 
-        thumb_style = resolve_style(
-            fg_color=self.focus_fg_color or "#ffffff" if self.is_focused(context) else base_style.fg_color,
-            bg_color=self.focus_bg_color if self.is_focused(context) else base_style.bg_color,
+        thumb_style = themed_style(
+            context.theme,
+            "scroll",
+            fg_color=(self.focus_fg_color or context.theme.color("focus_fg", "#ffffff")) if self.is_focused(context) else base_style.fg_color,
+            bg_color=(self.focus_bg_color or context.theme.color("focus_bg", base_style.bg_color)) if self.is_focused(context) else base_style.bg_color,
             fallback=base_style,
         )
         for offset in range(thumb_height):

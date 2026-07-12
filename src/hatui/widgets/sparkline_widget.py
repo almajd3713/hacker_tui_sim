@@ -1,4 +1,4 @@
-from hatui.core.style import Style, resolve_style
+from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
 
@@ -70,7 +70,9 @@ class SparklineWidget(Widget):
         if rect.width <= 0 or rect.height <= 0:
             return
 
-        style = resolve_style(
+        style = themed_style(
+            context.theme,
+            "sparkline",
             fg_color=self.fg_color,
             bg_color=self.bg_color,
             fallback=Style(

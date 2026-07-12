@@ -1,5 +1,5 @@
 from hatui.core.widget import Widget, WidgetContext
-from hatui.core.style import BorderTheme
+from hatui.core.style import BorderTheme, resolve_color_token, resolve_font_token
 
 
 class BorderWidget(Widget):
@@ -63,16 +63,16 @@ class BorderWidget(Widget):
     def _resolved_theme(self, context: WidgetContext) -> BorderTheme:
         fallback = context.theme.border
         style = self.style if self.style in self.BORDER_STYLES else fallback.style
-        fg_color = fallback.fg_color if self.fg_color is None else self.fg_color
-        bg_color = fallback.bg_color if self.bg_color is None else self.bg_color
+        fg_color = resolve_color_token(self.fg_color, context.theme, fallback.fg_color) if self.fg_color is not None else fallback.fg_color
+        bg_color = resolve_color_token(self.bg_color, context.theme, fallback.bg_color) if self.bg_color is not None else fallback.bg_color
         if self.is_focused(context):
-            fg_color = self.focus_fg_color or fg_color
-            bg_color = self.focus_bg_color or bg_color
+            fg_color = resolve_color_token(self.focus_fg_color, context.theme, context.theme.color("focus_fg", fg_color)) if self.focus_fg_color is not None else context.theme.color("focus_fg", fg_color)
+            bg_color = resolve_color_token(self.focus_bg_color, context.theme, context.theme.color("focus_bg", bg_color)) if self.focus_bg_color is not None else context.theme.color("focus_bg", bg_color)
         return BorderTheme(
             style=style,
             fg_color=fg_color,
             bg_color=bg_color,
-            font_name=fallback.font_name if self.font_name is None else self.font_name,
+            font_name=resolve_font_token(self.font_name, context.theme, fallback.font_name) if self.font_name is not None else fallback.font_name,
         )
 
     def allocate_children(self, width: int, height: int):

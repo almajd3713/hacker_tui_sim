@@ -1,4 +1,4 @@
-from hatui.core.style import Style, resolve_style
+from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
 
@@ -68,8 +68,11 @@ class AlertWidget(Widget):
 
         level = self.state.get("level", "info")
         tag, level_color = self.LEVEL_STYLES.get(level, ("INFO", "cyan"))
-        style = resolve_style(
-            fg_color=self.fg_color or level_color,
+        themed_level = context.theme.widget_slot("alert", f"{level}_fg_color", None)
+        style = themed_style(
+            context.theme,
+            "alert",
+            fg_color=self.fg_color or themed_level or level_color,
             bg_color=self.bg_color,
             fallback=Style(
                 fg_color=context.theme.text.fg_color,
