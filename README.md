@@ -7,13 +7,19 @@ Hatui is a configurable hacker-style terminal UI toolkit for Python. It lets you
 Recommended for end users:
 
 ```bash
-pipx install hatui
+pipx install hatui-kit
 ```
 
 Python package install:
 
 ```bash
-pip install hatui
+pip install hatui-kit
+```
+
+Installed CLI command:
+
+```bash
+hatui
 ```
 
 Windows convenience build:
