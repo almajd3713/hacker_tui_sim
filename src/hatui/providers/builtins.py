@@ -13,8 +13,7 @@ import urllib.request
 from pathlib import Path
 
 from hatui.providers.base import Provider
-from hatui.runtime.bindings import resolve_path
-from hatui.runtime.formatters import apply_formatter, apply_template
+from hatui.providers.helpers import render_template, resolve_items, resolve_mapping, resolve_value_spec
 
 
 class ConstantProvider(Provider):
@@ -197,57 +196,37 @@ class HttpJsonProvider(Provider):
 
 class TransformProvider(Provider):
     def provide(self, delta_time: float, context):
-        source = resolve_path(context.data, self.spec.get("source"))
-        if source is None:
-            source = self.spec.get("default")
-        value = apply_formatter(source, self.spec.get("formatter"))
-        return apply_template(value, self.spec.get("template"))
+        if "items" in self.spec:
+            return resolve_items(self.spec.get("items", []), context.data)
+        if "mapping" in self.spec and "template" in self.spec:
+            return render_template(self.spec.get("template", ""), self.spec.get("mapping", {}), context.data)
+        if "mapping" in self.spec:
+            return resolve_mapping(self.spec.get("mapping", {}), context.data)
+        return resolve_value_spec(
+            {
+                "source": self.spec.get("source"),
+                "default": self.spec.get("default"),
+                "formatter": self.spec.get("formatter"),
+                "template": self.spec.get("template"),
+                "operations": self.spec.get("operations", []),
+            },
+            context.data,
+        )
 
 
 class TemplateProvider(Provider):
     def provide(self, delta_time: float, context):
-        values = {}
-        for key, source in self.spec.get("mapping", {}).items():
-            if isinstance(source, dict):
-                value = resolve_path(context.data, source.get("path"), source.get("default"))
-                value = apply_formatter(value, source.get("formatter"))
-                value = apply_template(value, source.get("template"))
-            else:
-                value = resolve_path(context.data, source)
-            values[key] = value
-        return self.spec.get("template", "").format(**values)
+        return render_template(self.spec.get("template", ""), self.spec.get("mapping", {}), context.data)
 
 
 class ComposeProvider(Provider):
     def provide(self, delta_time: float, context):
-        mapping = self.spec.get("mapping", {})
-        composed = {}
-        for key, source in mapping.items():
-            if isinstance(source, dict):
-                value = resolve_path(context.data, source.get("path"), source.get("default"))
-                value = apply_formatter(value, source.get("formatter"))
-                value = apply_template(value, source.get("template"))
-            else:
-                value = resolve_path(context.data, source)
-            composed[key] = value
-        return composed
+        return resolve_mapping(self.spec.get("mapping", {}), context.data)
 
 
 class RecordsProvider(Provider):
     def provide(self, delta_time: float, context):
-        records = []
-        for item in self.spec.get("items", []):
-            record = {}
-            for key, source in item.items():
-                if isinstance(source, dict):
-                    value = resolve_path(context.data, source.get("path"), source.get("default"))
-                    value = apply_formatter(value, source.get("formatter"))
-                    value = apply_template(value, source.get("template"))
-                else:
-                    value = source
-                record[key] = value
-            records.append(record)
-        return records
+        return resolve_items(self.spec.get("items", []), context.data)
 
 
 class RollingWindowProvider(Provider):
@@ -255,7 +234,10 @@ class RollingWindowProvider(Provider):
         self.values: list = []
 
     def provide(self, delta_time: float, context):
-        source = resolve_path(context.data, self.spec.get("source"))
+        source = resolve_value_spec(
+            {"source": self.spec.get("source"), "default": self.spec.get("default")},
+            context.data,
+        )
         self.values.append(source)
         self.values = self.values[-int(self.spec.get("size", 32)) :]
         return list(self.values)
@@ -263,7 +245,10 @@ class RollingWindowProvider(Provider):
 
 class ThresholdProvider(Provider):
     def provide(self, delta_time: float, context):
-        value = resolve_path(context.data, self.spec.get("source"), self.spec.get("default"))
+        value = resolve_value_spec(
+            {"source": self.spec.get("source"), "default": self.spec.get("default")},
+            context.data,
+        )
         compare = float(self.spec.get("value", 0))
         try:
             actual = float(value)

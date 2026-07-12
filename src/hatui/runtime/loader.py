@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -15,8 +16,12 @@ class ScreenSpecLoader:
         self.provider_registry = provider_registry
 
     def load_spec(self, spec_path: str | Path) -> dict[str, Any]:
-        with Path(spec_path).open("r", encoding="utf-8") as handle:
-            return yaml.safe_load(handle) or {}
+        path = Path(spec_path).resolve()
+        spec = self._load_yaml(path)
+        resolved = self._resolve_includes(spec, path.parent, chain=(path,))
+        if not isinstance(resolved, dict):
+            raise ValueError("Top-level spec must resolve to an object")
+        return resolved
 
     def load_theme(self, spec: dict[str, Any]) -> Theme:
         theme_spec = spec.get("theme", {})
@@ -66,3 +71,51 @@ class ScreenSpecLoader:
         if weight is not None:
             widget.set_layout_weight(weight)
         return widget
+
+    def _load_yaml(self, path: Path) -> Any:
+        with path.open("r", encoding="utf-8") as handle:
+            return yaml.safe_load(handle) or {}
+
+    def _resolve_includes(self, node: Any, base_dir: Path, *, chain: tuple[Path, ...]) -> Any:
+        if isinstance(node, list):
+            resolved_items = []
+            for item in node:
+                resolved = self._resolve_includes(item, base_dir, chain=chain)
+                if isinstance(resolved, list):
+                    resolved_items.extend(resolved)
+                else:
+                    resolved_items.append(resolved)
+            return resolved_items
+
+        if not isinstance(node, dict):
+            return node
+
+        include_path = node.get("include")
+        if include_path is not None:
+            include_file = (base_dir / include_path).resolve()
+            if include_file in chain:
+                joined = " -> ".join(str(path) for path in (*chain, include_file))
+                raise ValueError(f"Circular include detected: {joined}")
+
+            included = self._load_yaml(include_file)
+            included = self._resolve_includes(
+                included,
+                include_file.parent,
+                chain=(*chain, include_file),
+            )
+
+            overrides = {key: value for key, value in node.items() if key != "include"}
+            if not overrides:
+                return deepcopy(included)
+            if not isinstance(included, dict):
+                raise ValueError(f"Include overrides require an object include: {include_file}")
+
+            merged = deepcopy(included)
+            for key, value in overrides.items():
+                merged[key] = self._resolve_includes(value, base_dir, chain=chain)
+            return merged
+
+        return {
+            key: self._resolve_includes(value, base_dir, chain=chain)
+            for key, value in node.items()
+        }

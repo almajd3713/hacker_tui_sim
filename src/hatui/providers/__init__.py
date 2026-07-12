@@ -1,6 +1,6 @@
 """Built-in provider implementations."""
 
-from hatui.providers.base import Provider
+from hatui.providers.base import Provider, ProviderResult
 from hatui.providers.builtins import (
     ClockProvider,
     CommandOutputProvider,
@@ -34,6 +34,7 @@ __all__ = [
     "HostInfoProvider",
     "HttpJsonProvider",
     "Provider",
+    "ProviderResult",
     "RandomProvider",
     "RecordsProvider",
     "RollingWindowProvider",

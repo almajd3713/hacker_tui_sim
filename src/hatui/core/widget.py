@@ -88,10 +88,13 @@ class Widget(ABC):
         self.keybindings = bindings
 
         focusable = spec.get("focusable")
-        if focusable is None:
-            self.focusable = self.default_focusable() or bool(self.keybindings)
-        else:
+        selectable = spec.get("selectable")
+        if focusable is not None:
             self.focusable = bool(focusable)
+        elif selectable is not None:
+            self.focusable = bool(selectable)
+        else:
+            self.focusable = self.default_focusable() or bool(self.keybindings)
 
         self.focus_fg_color = spec.get("focus_fg_color")
         self.focus_bg_color = spec.get("focus_bg_color")

@@ -1,0 +1,168 @@
+title: Overview
+route: overview
+child:
+  type: column
+  name: overview_screen
+  children:
+    - type: box
+      name: header_box
+      title: msys
+      title_align: center
+      padding: 1
+      style: rounded
+      fg_color: "#9b4dff"
+      weight: 4
+      child:
+        type: column
+        name: header_column
+        children:
+          - type: banner
+            name: header_banner
+            text_key: ui.header_text
+            fg_color: "#cbb7ff"
+            weight: 3
+          - type: label
+            name: header_label
+            text_key: ui.header_subtitle
+            align: center
+            fg_color: "#9e8be0"
+            weight: 1
+    - type: row
+      name: stats_row
+      weight: 3
+      children:
+        - type: box
+          name: cpu_box
+          title: cpu
+          padding: 1
+          weight: 1
+          child:
+            type: stat
+            name: cpu_stat
+            label: load avg
+            data_key: stats.cpu
+            accent_color: "#ff4d6d"
+        - type: box
+          name: mem_box
+          title: memory
+          padding: 1
+          weight: 1
+          child:
+            type: stat
+            name: mem_stat
+            label: resident
+            data_key: stats.memory
+            accent_color: "#4de0a8"
+        - type: box
+          name: net_box
+          title: network
+          padding: 1
+          weight: 1
+          child:
+            type: stat
+            name: net_stat
+            label: rx / tx
+            data_key: stats.network
+            accent_color: "#59d0ff"
+    - type: row
+      name: telemetry_row
+      weight: 7
+      children:
+        - type: box
+          name: overview_box
+          title: overview
+          padding: 1
+          weight: 3
+          child:
+            type: column
+            name: overview_column
+            children:
+              - type: scroll
+                name: overview_text_scroll
+                focus_fg_color: "#59d0ff"
+                weight: 3
+                child:
+                  type: paragraph
+                  name: overview_text
+                  text_key: ui.overview_text
+                  fg_color: "#f2f2f7"
+              - type: alert
+                name: overview_alert
+                message_key: alerts.message
+                level_key: alerts.level
+                weight: 1
+              - type: menu
+                name: quick_actions
+                selected_index_key: selection.quick_action_index
+                selected_fg_color: "#10131a"
+                selected_bg_color: "#59d0ff"
+                bullet: "» "
+                weight: 2
+                items:
+                  - label: route overview
+                    action: route_set
+                    payload:
+                      route: overview
+                  - label: route forensics
+                    action: route_set
+                    payload:
+                      route: forensics
+                  - label: route logs
+                    action: route_set
+                    payload:
+                      route: logs
+                  - label: open help overlay
+                    action: route_push
+                    payload:
+                      route: help_modal
+                  - label: toggle compact mode
+                    action: store_toggle
+                    payload:
+                      path: flags.compact_mode
+              - type: progress_bar
+                name: scan_bar
+                label: deep scan
+                value_key: signals.scan_progress
+                show_percentage: true
+                fill_color: "#ff4d6d"
+                weight: 1
+              - type: progress_bar
+                name: uplink_bar
+                label: uplink sync
+                value_key: signals.uplink_progress
+                show_percentage: true
+                fill_color: "#4de0a8"
+                weight: 1
+        - type: box
+          name: telemetry_box
+          title: telemetry
+          padding: 1
+          weight: 2
+          child:
+            type: column
+            name: telemetry_column
+            children:
+              - type: label
+                name: sparkline_label
+                text: packet burst
+                fg_color: "#f2f2f7"
+                weight: 1
+              - type: sparkline
+                name: telemetry_sparkline
+                values_key: telemetry.packet_series
+                fg_color: "#59d0ff"
+                weight: 1
+              - type: mini_chart
+                name: telemetry_mini_chart
+                values_key: telemetry.mini_chart
+                fg_color: "#4de0a8"
+                weight: 4
+              - type: paragraph
+                name: telemetry_copy
+                text_key: telemetry.summary
+                weight: 2
+    - type: status_strip
+      name: overview_status_strip
+      segments_key: ui.status_strip
+      bg_color: bright_black
+      weight: 1

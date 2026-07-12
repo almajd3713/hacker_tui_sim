@@ -1,0 +1,71 @@
+title: Forensics
+route: forensics
+child:
+  type: column
+  name: forensics_screen
+  children:
+    - type: box
+      name: forensics_box
+      title: forensics
+      padding: 1
+      weight: 10
+      child:
+        type: row
+        name: forensics_row
+        children:
+          - type: box
+            name: metrics_box
+            title: node metrics
+            padding: 1
+            weight: 3
+            child:
+              type: column
+              name: metrics_column
+              children:
+                - type: metric_grid
+                  name: metric_grid
+                  metrics_key: panels.metric_grid
+                  columns: 2
+                  accent_color: "#f2f2f7"
+                  weight: 2
+                - type: divider
+                  name: metric_divider
+                  fg_color: "#5a5a78"
+                  weight: 1
+                - type: code_block
+                  name: code_block
+                  code_key: panels.code_block
+                  show_line_numbers: true
+                  line_number_color: "#5a5a78"
+                  weight: 3
+                - type: hex_dump
+                  name: hex_dump
+                  data_key: panels.hex_dump
+                  bytes_per_row: 8
+                  offset_color: "#5a5a78"
+                  weight: 2
+          - type: box
+            name: table_box
+            title: relay table
+            padding: 1
+            weight: 2
+            child:
+              type: table
+              name: relay_table
+              rows_key: panels.relay_rows
+              selectable: true
+              selected_index_key: selection.relay_index
+              selected_row_key: selection.relay_row
+              selected_fg_color: "#10131a"
+              selected_bg_color: "#4de0a8"
+              header_color: "#f2f2f7"
+              columns:
+                - {title: relay, key: relay, width: 8}
+                - {title: lat, key: latency, width: 7, align: right}
+                - {title: loss, key: loss, width: 6, align: right}
+                - {title: state, key: state}
+    - type: status_strip
+      name: forensics_status_strip
+      segments_key: ui.status_strip
+      bg_color: bright_black
+      weight: 1

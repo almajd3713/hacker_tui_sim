@@ -1,0 +1,476 @@
+- type: clock
+  name: clock
+  target: runtime.clock
+  interval: 1.0
+  group: runtime
+
+- type: frame
+  name: frame
+  target: runtime.frame
+  group: runtime
+
+- type: host_info
+  name: host_info
+  target: host
+  interval: 2.0
+  group: runtime
+
+- type: system_stats
+  name: system_stats
+  target: system
+  interval: 2.0
+  group: runtime
+
+- type: constant
+  name: header_text
+  target: ui.header_text
+  value: LIVE OPERATIONS DASHBOARD
+
+- type: constant
+  name: header_subtitle
+  target: ui.header_subtitle
+  value: adaptive telemetry // yaml runtime demo
+
+- type: constant
+  name: overview_text
+  target: ui.overview_text
+  value: |-
+    Monitoring compute load, uplink stability, and packet bursts. This screen is loaded from YAML and fed by generic providers through dotted-path bindings.
+
+    The overview panel is now wrapped in a generic scroll viewport, so long-form operator notes can exceed the visible panel height without leaking into adjacent widgets.
+
+    Use focus traversal to land on the scroll region, then use arrow keys or j/k to move through the content.
+
+- type: constant
+  name: logs_note
+  target: ui.logs_note
+  value: |-
+    The log view is isolated in its own tab so providers can keep pushing events without forcing every screen to show them.
+
+    The note panel is also scrollable now, which gives us a bounded place for long-form operator guidance, incident notes, or task checklists.
+
+    Focus the viewport and use arrow keys or j/k to move through the text.
+
+- type: constant
+  name: help_text
+  target: ui.help_text
+  value: |-
+    Hatui now has a generic modal host layered above the routed screens.
+
+    This overlay is route-driven:
+    - open it through a normal action
+    - keep the underlying screen visible
+    - trap focus to modal content while active
+    - close it with route pop rather than widget-local teardown
+
+    This is the base for future inspectors, command palettes, confirmations, and transient workflows.
+
+- type: constant
+  name: hex_dump
+  target: panels.hex_dump
+  value: [77, 83, 89, 83, 45, 52, 10, 123, 114, 101, 108, 97, 121, 58, 51, 125, 59, 10, 255, 0, 126, 65, 66]
+
+- type: waveform
+  name: scan_progress
+  target: signals.scan_progress
+  waveform: sine
+  frequency: 0.9
+  amplitude: 0.45
+  offset: 0.5
+
+- type: waveform
+  name: uplink_progress
+  target: signals.uplink_progress
+  waveform: sine
+  frequency: 0.55
+  phase: 1.8
+  amplitude: 0.35
+  offset: 0.55
+
+- type: waveform
+  name: packet_sample
+  target: signals.packet_sample
+  waveform: sine
+  frequency: 2.6
+  amplitude: 0.24
+  offset: 0.62
+
+- type: waveform
+  name: mini_chart_sample
+  target: signals.mini_chart_sample
+  waveform: sine
+  frequency: 1.2
+  phase: 0.5
+  amplitude: 0.4
+  offset: 0.6
+
+- type: waveform
+  name: thread_count
+  target: stats_sources.thread_count
+  waveform: sine
+  frequency: 0.55
+  phase: 0.6
+  amplitude: 5.0
+  offset: 10.0
+
+- type: waveform
+  name: memory_gb
+  target: stats_sources.memory_gb
+  waveform: sine
+  frequency: 0.42
+  phase: 1.2
+  amplitude: 4.5
+  offset: 6.0
+
+- type: waveform
+  name: cache_gb
+  target: stats_sources.cache_gb
+  waveform: sine
+  frequency: 0.78
+  phase: 0.15
+  amplitude: 1.2
+  offset: 1.0
+
+- type: waveform
+  name: network_rx
+  target: stats_sources.network_rx
+  waveform: sine
+  frequency: 0.73
+  phase: 0.2
+  amplitude: 320
+  offset: 520
+
+- type: waveform
+  name: network_tx
+  target: stats_sources.network_tx
+  waveform: sine
+  frequency: 0.57
+  phase: 1.7
+  amplitude: 180
+  offset: 240
+
+- type: rolling_window
+  name: packet_series
+  target: telemetry.packet_series
+  source: signals.packet_sample
+  size: 48
+  group: telemetry
+  depends_on: [packet_sample]
+  metadata_target: telemetry.provider_meta.packet_series
+
+- type: rolling_window
+  name: mini_chart
+  target: telemetry.mini_chart
+  source: signals.mini_chart_sample
+  size: 24
+  group: telemetry
+  depends_on: [mini_chart_sample]
+
+- type: threshold
+  name: alert_level
+  target: alerts.level
+  source: signals.packet_sample
+  operator: gt
+  value: 0.75
+  true: warn
+  false: info
+  group: derived
+  depends_on: [packet_sample]
+
+- type: threshold
+  name: alert_message
+  target: alerts.message
+  source: signals.packet_sample
+  operator: gt
+  value: 0.75
+  true: packet burst nearing threshold
+  false: all monitored channels nominal
+  group: derived
+  depends_on: [packet_sample]
+
+- type: transform
+  name: cpu_stat
+  target: stats.cpu
+  group: derived
+  depends_on: [scan_progress, thread_count]
+  mapping:
+    value:
+      path: signals.scan_progress
+      formatter:
+        name: percent
+        precision: 1
+    secondary:
+      path: stats_sources.thread_count
+      formatter:
+        name: fixed
+        precision: 0
+      template: "threads {value}"
+
+- type: transform
+  name: memory_stat
+  target: stats.memory
+  group: derived
+  depends_on: [memory_gb, cache_gb]
+  mapping:
+    value:
+      path: stats_sources.memory_gb
+      formatter:
+        name: fixed
+        precision: 1
+      template: "{value} GB"
+    secondary:
+      path: stats_sources.cache_gb
+      formatter:
+        name: fixed
+        precision: 1
+      template: "cache {value} GB"
+
+- type: transform
+  name: network_stat
+  target: stats.network
+  group: derived
+  depends_on: [network_rx, network_tx]
+  mapping:
+    value:
+      path: stats_sources.network_rx
+      formatter:
+        name: fixed
+        precision: 0
+      template: "{value} kb/s"
+    secondary:
+      path: stats_sources.network_tx
+      formatter:
+        name: fixed
+        precision: 0
+      template: "tx {value} kb/s"
+
+- type: transform
+  name: telemetry_summary
+  target: telemetry.summary
+  group: telemetry
+  depends_on: [frame, packet_sample]
+  template: "frame {frame}  delta {delta}ms  burst {burst}"
+  mapping:
+    frame:
+      path: runtime.frame.frame
+      formatter:
+        name: fixed
+        precision: 0
+    delta:
+      path: runtime.frame.delta_time
+      formatter:
+        name: fixed
+        precision: 3
+    burst:
+      path: signals.packet_sample
+      formatter:
+        name: fixed
+        precision: 2
+
+- type: transform
+  name: metric_grid
+  target: panels.metric_grid
+  group: ui
+  depends_on: [host_info, system_stats, uplink_progress, packet_sample]
+  items:
+    - label: host
+      value:
+        path: host.hostname
+    - label: cpu
+      value:
+        path: system.cpu_count
+    - label: load
+      value:
+        path: system.loadavg.1m
+        formatter:
+          name: fixed
+          precision: 2
+    - label: auth
+      value:
+        path: signals.uplink_progress
+        formatter:
+          name: percent
+          precision: 0
+    - label: burst
+      value:
+        path: signals.packet_sample
+        formatter:
+          name: fixed
+          precision: 2
+    - label: disk
+      value:
+        path: system.disk.used
+        formatter:
+          name: bytes
+
+- type: transform
+  name: relay_rows
+  target: panels.relay_rows
+  group: ui
+  depends_on: [network_rx, network_tx, memory_gb, cache_gb, scan_progress]
+  items:
+    - relay: r-01
+      latency:
+        path: stats_sources.network_rx
+        formatter:
+          name: fixed
+          precision: 0
+        template: "{value}ms"
+      loss: 0.1%
+      state: stable
+    - relay: r-02
+      latency:
+        path: stats_sources.network_tx
+        formatter:
+          name: fixed
+          precision: 0
+        template: "{value}ms"
+      loss: 0.4%
+      state: syncing
+    - relay: r-03
+      latency:
+        path: stats_sources.memory_gb
+        formatter:
+          name: fixed
+          precision: 0
+        template: "{value}ms"
+      loss: 2.1%
+      state: retry
+    - relay: r-04
+      latency:
+        path: stats_sources.cache_gb
+        formatter:
+          name: fixed
+          precision: 0
+        template: "{value}ms"
+      loss: 0.0%
+      state: stable
+    - relay: r-05
+      latency:
+        path: signals.scan_progress
+        formatter:
+          name: percent
+          precision: 0
+      loss: 0.3%
+      state: warming
+    - relay: r-06
+      latency: 412ms
+      loss: 0.7%
+      state: retry
+    - relay: r-07
+      latency: 388ms
+      loss: 0.0%
+      state: stable
+    - relay: r-08
+      latency: 501ms
+      loss: 1.2%
+      state: degraded
+    - relay: r-09
+      latency: 274ms
+      loss: 0.2%
+      state: stable
+    - relay: r-10
+      latency: 629ms
+      loss: 2.8%
+      state: probing
+    - relay: r-11
+      latency: 341ms
+      loss: 0.1%
+      state: stable
+    - relay: r-12
+      latency: 455ms
+      loss: 0.6%
+      state: syncing
+
+- type: transform
+  name: code_block
+  target: panels.code_block
+  group: ui
+  depends_on: [thread_count, network_tx, packet_sample]
+  template: |-
+    scan(node_cluster);
+    refresh(relay_{relay});
+    latency_window = {latency};
+    packet_burst = {burst};
+    if packet_burst > 0.82:
+        flag('jitter-threshold');
+    commit(snapshot);
+  mapping:
+    relay:
+      path: stats_sources.thread_count
+      formatter:
+        name: fixed
+        precision: 0
+    latency:
+      path: stats_sources.network_tx
+      formatter:
+        name: fixed
+        precision: 0
+    burst:
+      path: signals.packet_sample
+      formatter:
+        name: fixed
+        precision: 3
+
+- type: demo_logs
+  name: logs
+  target: logs.main
+  interval: 1.0
+  max_lines: 80
+
+- type: transform
+  name: status_strip
+  target: ui.status_strip
+  group: ui
+  depends_on: [frame, packet_sample]
+  items:
+    - text: overview
+    - text:
+        path: _ui.focused_widget
+        template: "focus {value}"
+      fg_color: "#ffd166"
+    - text:
+        path: _router.current
+        template: "route {value}"
+      fg_color: "#ff8fab"
+    - text:
+        path: state.flags.compact_mode
+        template: "compact {value}"
+      fg_color: "#9e8be0"
+    - text:
+        path: state.selection.relay_index
+        template: "relay #{value}"
+      fg_color: "#59d0ff"
+    - text:
+        path: runtime.frame.frame
+        formatter:
+          name: fixed
+          precision: 0
+        template: "frame {value}"
+      fg_color: "#59d0ff"
+    - text:
+        path: runtime.frame.delta_time
+        formatter:
+          name: fixed
+          precision: 3
+        template: "dt {value}ms"
+      fg_color: "#4de0a8"
+    - text:
+        path: signals.packet_sample
+        formatter:
+          name: fixed
+          precision: 2
+        template: "burst {value}"
+      fg_color: "#cbb7ff"
+    - text:
+        path: telemetry.provider_meta.packet_series.status
+        template: "series {value}"
+      fg_color: "#ffd166"
+    - text:
+        path: _ui.last_focused_by_route.overview
+        template: "ovr {value}"
+      fg_color: "#9e8be0"
+    - text: "tab focus"
+      fg_color: "#9e8be0"
+    - text: "enter menu / j-k lists / arrows scroll"
+      fg_color: "#9e8be0"

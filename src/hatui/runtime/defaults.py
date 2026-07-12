@@ -53,7 +53,7 @@ from hatui.widgets import (
     TextWidget,
 )
 
-GENERIC_WIDGET_KEYS = {"focusable", "focus_fg_color", "focus_bg_color", "keybindings"}
+GENERIC_WIDGET_KEYS = {"focusable", "selectable", "focus_fg_color", "focus_bg_color", "keybindings"}
 
 
 def _clean(spec: dict, excluded: set[str]) -> dict:

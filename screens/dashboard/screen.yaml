@@ -1,0 +1,40 @@
+type: modal_host
+name: app_shell
+keybindings:
+  - key: h
+    action: route_push
+    payload:
+      route: help_modal
+child:
+  type: tabs
+  name: root_tabs
+  show_tabs: true
+  focus_fg_color: "#59d0ff"
+  focus_bg_color: "#1d2533"
+  keybindings:
+    - key: "1"
+      action: route_set
+      payload:
+        route: overview
+    - key: "2"
+      action: route_set
+      payload:
+        route: forensics
+    - key: "3"
+      action: route_set
+      payload:
+        route: logs
+    - key: m
+      action: store_toggle
+      payload:
+        path: flags.compact_mode
+    - key: h
+      action: route_push
+      payload:
+        route: help_modal
+  tabs:
+    - include: tabs/overview.yaml
+    - include: tabs/forensics.yaml
+    - include: tabs/logs.yaml
+modals:
+  - include: modals/help.yaml

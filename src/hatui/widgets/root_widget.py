@@ -21,6 +21,8 @@ class RootWidget(Widget):
         self.context = WidgetContext(name=name, version="1.0.0", theme=theme or Theme())
         self.store = store
         self.router = router
+        self.state["last_focused_by_route"] = {}
+        self.state["_refreshing_interaction"] = False
         self.configure_interaction(
             {
                 "keybindings": [
@@ -58,19 +60,61 @@ class RootWidget(Widget):
             widgets.extend(child.focusable_widgets())
         return widgets
 
-    def _sync_focus(self, context: WidgetContext):
-        focusables = self._focusable_widgets()
-        focused = context.focused_widget
-        if focusables and focused not in {widget.name for widget in focusables}:
-            context.focused_widget = focusables[0].name
-        if not focusables:
-            context.focused_widget = None
-        context.data.setdefault("_ui", {})
-        set_path(context.data, "_ui.focused_widget", context.focused_widget)
+    def _current_route(self) -> str | None:
+        if self.router is None:
+            return None
+        return self.router.current
+
+    def _sync_runtime_state(self, context: WidgetContext):
         if self.store is not None:
             self.store.sync_to_context(context)
         if self.router is not None:
             self.router.sync_to_context(context)
+
+    def _refresh_interaction_state(self, context: WidgetContext):
+        self._sync_runtime_state(context)
+        self.state["_refreshing_interaction"] = True
+        try:
+            self.update_children(0.0, context)
+        finally:
+            self.state["_refreshing_interaction"] = False
+
+    def _remember_focus(self, route: str | None, focused_widget: str | None):
+        if not route or not focused_widget:
+            return
+        self.state.setdefault("last_focused_by_route", {})
+        self.state["last_focused_by_route"][route] = focused_widget
+
+    def _restore_focus(self, route: str | None, names: list[str]) -> bool:
+        if not route:
+            return False
+        target = self.state.get("last_focused_by_route", {}).get(route)
+        if target in names:
+            self.context.focused_widget = target
+            return True
+        return False
+
+    def _sync_focus(self, context: WidgetContext):
+        self._refresh_interaction_state(context)
+        focusables = self._focusable_widgets()
+        focusable_names = [widget.name for widget in focusables]
+        focused = context.focused_widget
+        route = self._current_route()
+        if focusables and focused not in set(focusable_names):
+            if not self._restore_focus(route, focusable_names):
+                context.focused_widget = focusables[0].name
+        if not focusables:
+            context.focused_widget = None
+        if context.focused_widget in focusable_names:
+            self._remember_focus(route, context.focused_widget)
+        context.data.setdefault("_ui", {})
+        set_path(context.data, "_ui.focused_widget", context.focused_widget)
+        set_path(
+            context.data,
+            "_ui.last_focused_by_route",
+            dict(self.state.get("last_focused_by_route", {})),
+        )
+        self._sync_runtime_state(context)
 
     def focus_first(self, context: WidgetContext) -> bool:
         focusables = self._focusable_widgets()
@@ -131,6 +175,7 @@ class RootWidget(Widget):
     def route_set(self, route: str | None, context: WidgetContext) -> bool:
         if self.router is None or not route:
             return False
+        self._remember_focus(self._current_route(), context.focused_widget)
         changed = self.router.set_current(route)
         self._sync_focus(context)
         return changed
@@ -138,6 +183,7 @@ class RootWidget(Widget):
     def route_next(self, context: WidgetContext) -> bool:
         if self.router is None:
             return False
+        self._remember_focus(self._current_route(), context.focused_widget)
         changed = self.router.next()
         self._sync_focus(context)
         return changed
@@ -145,6 +191,7 @@ class RootWidget(Widget):
     def route_prev(self, context: WidgetContext) -> bool:
         if self.router is None:
             return False
+        self._remember_focus(self._current_route(), context.focused_widget)
         changed = self.router.previous()
         self._sync_focus(context)
         return changed
@@ -152,6 +199,7 @@ class RootWidget(Widget):
     def route_push(self, route: str | None, context: WidgetContext) -> bool:
         if self.router is None or not route:
             return False
+        self._remember_focus(self._current_route(), context.focused_widget)
         changed = self.router.push(route)
         self._sync_focus(context)
         return changed
@@ -159,6 +207,7 @@ class RootWidget(Widget):
     def route_pop(self, context: WidgetContext) -> bool:
         if self.router is None:
             return False
+        self._remember_focus(self._current_route(), context.focused_widget)
         changed = self.router.pop()
         self._sync_focus(context)
         return changed
@@ -167,6 +216,9 @@ class RootWidget(Widget):
         if self.store is None or not path:
             return False
         self.store.set(path, value)
+        if self.state.get("_refreshing_interaction"):
+            self._sync_runtime_state(context)
+            return True
         self._sync_focus(context)
         return True
 
@@ -174,6 +226,9 @@ class RootWidget(Widget):
         if self.store is None or not path:
             return False
         self.store.toggle(path)
+        if self.state.get("_refreshing_interaction"):
+            self._sync_runtime_state(context)
+            return True
         self._sync_focus(context)
         return True
 
