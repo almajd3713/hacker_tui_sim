@@ -268,3 +268,162 @@
           name: percent
           precision: 0
       state: online
+
+- type: records
+  name: hacker_entity_seed
+  target: hacker.entity_seed
+  depends_on: [network_rx, network_tx, thread_count, memory_gb, cache_gb]
+  items:
+    - label: uplink-01
+      state: stable
+      value:
+        path: signals.uplink_progress
+        formatter:
+          name: percent
+          precision: 0
+      meta:
+        path: stats_sources.network_rx
+        formatter:
+          name: fixed
+          precision: 0
+        template: "rx {value} kb/s"
+    - label: relay-03
+      state: retry
+      value:
+        path: signals.packet_sample
+        formatter:
+          name: fixed
+          precision: 2
+      meta:
+        path: stats_sources.network_tx
+        formatter:
+          name: fixed
+          precision: 0
+        template: "tx {value} kb/s"
+    - label: scan-core
+      state: scanning
+      value:
+        path: signals.scan_progress
+        formatter:
+          name: percent
+          precision: 0
+      meta:
+        path: stats_sources.thread_count
+        formatter:
+          name: fixed
+          precision: 0
+        template: "{value} thr"
+    - label: auth-mesh
+      state: syncing
+      value:
+        path: stats_sources.memory_gb
+        formatter:
+          name: fixed
+          precision: 1
+        template: "{value} GB"
+      meta:
+        path: stats_sources.cache_gb
+        formatter:
+          name: fixed
+          precision: 1
+        template: "cache {value} GB"
+
+- type: normalize_state
+  name: hacker_entities
+  target: hacker.entities
+  source: hacker.entity_seed
+  depends_on: [hacker_entity_seed]
+  state_map:
+    stable: online
+    retry: degraded
+    syncing: busy
+    scanning: busy
+    warming: busy
+    degraded: degraded
+    online: online
+    idle: idle
+  severity_by_state:
+    online: success
+    busy: warn
+    degraded: error
+    idle: info
+  default_state: unknown
+  default_severity: info
+
+- type: records
+  name: hacker_signal_strip
+  target: hacker.signal_strip
+  depends_on: [hacker_entities]
+  items:
+    - label: UL
+      severity: hacker.entities.0.severity
+    - label: RL
+      severity: hacker.entities.1.severity
+    - label: SC
+      severity: hacker.entities.2.severity
+    - label: AU
+      severity: hacker.entities.3.severity
+
+- type: bucket
+  name: hacker_packet_histogram
+  target: hacker.packet_histogram
+  source: telemetry.packet_series
+  depends_on: [packet_series]
+  bucket_count: 8
+  min: 0.2
+  max: 1.0
+  precision: 2
+
+- type: event_stream
+  name: hacker_alert_stream
+  target: hacker.alerts
+  interval: 1.0
+  max_items: 24
+  depends_on: [alert_level, packet_sample, uplink_progress]
+  item:
+    level:
+      path: alerts.level
+      default: warn
+    source: relay-03
+    message:
+      template: "burst {burst} // uplink {uplink} // relay {relay}"
+      mapping:
+        burst:
+          path: signals.packet_sample
+          formatter:
+            name: fixed
+            precision: 2
+        uplink:
+          path: signals.uplink_progress
+          formatter:
+            name: percent
+            precision: 0
+        relay:
+          value: retry
+
+- type: transform
+  name: hacker_selected_detail
+  target: hacker.selected_detail
+  depends_on: [hacker_entities, frame]
+  mapping:
+    selected:
+      path: state.selection.matrix_item
+    runtime:
+      path: runtime.frame
+    signals:
+      mapping:
+        packet:
+          path: signals.packet_sample
+          formatter:
+            name: fixed
+            precision: 2
+        uplink:
+          path: signals.uplink_progress
+          formatter:
+            name: percent
+            precision: 0
+        scan:
+          path: signals.scan_progress
+          formatter:
+            name: percent
+            precision: 0

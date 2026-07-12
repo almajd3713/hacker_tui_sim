@@ -119,6 +119,10 @@ child:
                     action: route_set
                     payload:
                       route: analysis
+                  - label: route hacker
+                    action: route_set
+                    payload:
+                      route: hacker
                   - label: open help overlay
                     action: route_push
                     payload:

@@ -470,9 +470,13 @@
         path: _ui.last_focused_by_route.overview
         template: "ovr {value}"
       fg_color: "@text_muted"
+    - text:
+        path: state.selection.matrix_item.label
+        template: "node {value}"
+      fg_color: "@accent_alt"
     - text: "tab focus"
       fg_color: "@text_muted"
-    - text: "1-5 tabs / enter menu / j-k lists / arrows scroll"
+    - text: "1-6 tabs / enter menu / j-k lists / arrows scroll"
       fg_color: "@text_muted"
 
 - include: providers/phase8.yaml

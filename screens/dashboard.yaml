@@ -34,6 +34,21 @@ theme:
     status_strip:
       fg_color: "@text"
       bg_color: "@surface_alt"
+    signal_strip:
+      fg_color: "@text"
+      bg_color: "@surface"
+      info_fg_color: "@info"
+      warn_fg_color: "@warn"
+      error_fg_color: "@error"
+      success_fg_color: "@success"
+    status_matrix:
+      active_fg_color: "@selection_fg"
+      active_bg_color: "@selection_bg"
+      info_fg_color: "@info"
+      warn_fg_color: "@warn"
+      error_fg_color: "@error"
+      success_fg_color: "@success"
+      unknown_fg_color: "@text_muted"
     stat:
       accent_color: "@accent"
     metric_grid:
@@ -46,7 +61,16 @@ theme:
     gauge:
       fill_color: "@accent"
       empty_color: "@border"
+    histogram:
+      fill_color: "@accent_alt"
     alert:
+      info_fg_color: "@info"
+      warn_fg_color: "@warn"
+      error_fg_color: "@error"
+      success_fg_color: "@success"
+    alert_stack:
+      selected_fg_color: "@selection_fg"
+      selected_bg_color: "@selection_bg"
       info_fg_color: "@info"
       warn_fg_color: "@warn"
       error_fg_color: "@error"
@@ -90,6 +114,10 @@ theme:
     inspector:
       key_color: "@text_muted"
       value_color: "@text"
+    kv_inspector:
+      title_color: "@accent"
+      key_color: "@text_muted"
+      value_color: "@text"
     diff_viewer:
       added_fg_color: "@success"
       removed_fg_color: "@error"
@@ -106,6 +134,7 @@ state:
   selection:
     quick_action_index: 0
     relay_index: 0
+    matrix_index: 0
 
 router:
   routes:
@@ -113,6 +142,7 @@ router:
     - forensics
     - visuals
     - analysis
+    - hacker
     - logs
     - help_modal
   initial: overview

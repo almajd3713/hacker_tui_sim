@@ -1,0 +1,80 @@
+title: Hacker
+route: hacker
+child:
+  type: column
+  name: hacker_screen
+  children:
+    - type: box
+      name: hacker_strip_box
+      title: channels
+      padding: 0
+      weight: 2
+      child:
+        type: signal_strip
+        name: hacker_signal_strip_widget
+        items_key: hacker.signal_strip
+    - type: row
+      name: hacker_primary_row
+      weight: 4
+      children:
+        - type: box
+          name: hacker_matrix_box
+          title: status matrix
+          padding: 1
+          weight: 3
+          child:
+            type: status_matrix
+            name: hacker_status_matrix
+            items_key: hacker.entities
+            selectable: true
+            selected_index_key: selection.matrix_index
+            selected_item_key: selection.matrix_item
+            columns: 2
+            density: normal
+        - type: box
+          name: hacker_histogram_box
+          title: burst distribution
+          padding: 1
+          weight: 2
+          child:
+            type: histogram
+            name: hacker_packet_histogram
+            buckets_key: hacker.packet_histogram
+            label_width: 9
+    - type: row
+      name: hacker_secondary_row
+      weight: 5
+      children:
+        - type: box
+          name: hacker_alert_stack_box
+          title: alert stack
+          padding: 1
+          weight: 2
+          child:
+            type: alert_stack
+            name: hacker_alert_stack
+            items_key: hacker.alerts
+            focusable: false
+        - type: box
+          name: hacker_heatmap_box
+          title: activity field
+          padding: 1
+          weight: 1
+          child:
+            type: heatmap
+            name: hacker_heatmap
+            matrix_key: viz.heatmap
+        - type: box
+          name: hacker_inspector_box
+          title: entity inspector
+          padding: 1
+          weight: 2
+          child:
+            type: kv_inspector
+            name: hacker_kv_inspector
+            data_key: hacker.selected_detail
+    - type: status_strip
+      name: hacker_status_strip
+      segments_key: ui.status_strip
+      bg_color: "@surface_alt"
+      weight: 1

@@ -31,6 +31,10 @@ child:
     - key: "5"
       action: route_set
       payload:
+        route: hacker
+    - key: "6"
+      action: route_set
+      payload:
         route: logs
     - key: m
       action: store_toggle
@@ -45,6 +49,7 @@ child:
     - include: tabs/forensics.yaml
     - include: tabs/visuals.yaml
     - include: tabs/analysis.yaml
+    - include: tabs/hacker.yaml
     - include: tabs/logs.yaml
 modals:
   - include: modals/help.yaml
