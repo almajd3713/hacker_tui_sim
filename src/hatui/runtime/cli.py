@@ -6,38 +6,7 @@ from contextlib import nullcontext
 from pathlib import Path
 
 from hatui.demo_assets import bundled_demo_spec_path
-
-
-UNICODE_FALLBACK_MAP = str.maketrans(
-    {
-        "╭": "+",
-        "╮": "+",
-        "╰": "+",
-        "╯": "+",
-        "┌": "+",
-        "┐": "+",
-        "└": "+",
-        "┘": "+",
-        "│": "|",
-        "─": "-",
-        "═": "=",
-        "█": "#",
-        "▇": "#",
-        "▆": "#",
-        "▅": "#",
-        "▄": "#",
-        "▃": "*",
-        "▂": "*",
-        "▁": ".",
-        "░": ".",
-        "▒": ":",
-        "▓": "#",
-        "»": ">",
-        "▸": ">",
-        "▾": "v",
-        "•": "*",
-    }
-)
+from hatui.runtime.render_policy import RenderPolicy
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -73,12 +42,23 @@ def resolve_spec_context(spec_arg: str | None):
     return bundled_demo_spec_path(), True
 
 
+def preferred_glyph_mode(stream=None) -> str:
+    stream = sys.stdout if stream is None else stream
+    encoding = getattr(stream, "encoding", None) or "utf-8"
+    sample = "┌█▁░▸●╱"
+    try:
+        sample.encode(encoding)
+    except UnicodeEncodeError:
+        return "ascii"
+    return "unicode"
+
+
 def write_cli_text(text: str) -> None:
     encoding = sys.stdout.encoding or "utf-8"
     try:
         sys.stdout.write(text)
     except UnicodeEncodeError:
-        fallback = text.translate(UNICODE_FALLBACK_MAP)
+        fallback = RenderPolicy("ascii").translate(text)
         if hasattr(sys.stdout, "buffer"):
             sys.stdout.buffer.write(fallback.encode(encoding, errors="replace"))
         else:

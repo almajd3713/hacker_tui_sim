@@ -1,6 +1,7 @@
 from hatui.core.widget import Widget, WidgetContext
 from hatui.core.style import Theme
 from hatui.runtime.action_registry import create_default_action_registry
+from hatui.runtime.render_policy import RenderPolicy
 from hatui.widgets.root_services import DebugSnapshotBuilder, RootInteractionController
 
 class RootWidget(Widget):
@@ -17,9 +18,15 @@ class RootWidget(Widget):
         *,
         store=None,
         router=None,
+        render_policy: RenderPolicy | None = None,
     ):
         super().__init__(name, children)
-        self.context = WidgetContext(name=name, version="1.0.0", theme=theme or Theme())
+        self.context = WidgetContext(
+            name=name,
+            version="1.0.0",
+            theme=theme or Theme(),
+            render_policy=render_policy or RenderPolicy(),
+        )
         self.store = store
         self.router = router
         self.action_registry = create_default_action_registry()

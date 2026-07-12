@@ -1,6 +1,7 @@
 from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
+from hatui.widgets.selection import StoreSelectionBinding, move_selected_index, read_selected_index, sync_selection
 
 
 class TableWidget(Widget):
@@ -72,32 +73,32 @@ class TableWidget(Widget):
 
     def _sync_selection(self, context: WidgetContext):
         rows = self.state.get("rows", [])
-        if not rows:
-            self.state["selected_index"] = 0
-            return
-        self.state["selected_index"] = max(0, min(self.state.get("selected_index", 0), len(rows) - 1))
-        if self.selected_index_key is not None:
-            self.root.perform_action(
-                "store_set",
-                {"path": self.selected_index_key, "value": self.state["selected_index"]},
-                context,
-            )
+        bindings: list[StoreSelectionBinding] = []
         if self.selected_row_key is not None:
-            self.root.perform_action(
-                "store_set",
-                {"path": self.selected_row_key, "value": rows[self.state["selected_index"]]},
-                context,
+            bindings.append(
+                StoreSelectionBinding(
+                    self.selected_row_key,
+                    lambda: self.state.get("rows", [])[self.state.get("selected_index", 0)],
+                )
             )
+        self.state["selected_index"] = sync_selection(
+            self,
+            context,
+            rows,
+            self.state.get("selected_index", 0),
+            index_key=self.selected_index_key,
+            bindings=bindings,
+        )
 
     def update(self, delta_time: float, context: WidgetContext):
         rows = resolve_path(context.data, self.rows_key, []) if self.rows_key is not None else []
         self.state["rows"] = list(rows)
         if self.selected_index_key is not None:
-            value = resolve_path(context.data, self.selected_index_key, self.state.get("selected_index", self.selected_index))
-            try:
-                self.state["selected_index"] = max(int(value), 0)
-            except (TypeError, ValueError):
-                self.state["selected_index"] = self.selected_index
+            self.state["selected_index"] = read_selected_index(
+                context,
+                self.selected_index_key,
+                self.state.get("selected_index", self.selected_index),
+            )
         self._sync_selection(context)
         super().update(delta_time, context)
 
@@ -148,9 +149,7 @@ class TableWidget(Widget):
 
     def _move_selection(self, delta: int, context: WidgetContext):
         rows = self.state.get("rows", [])
-        if not rows:
-            return
-        self.state["selected_index"] = max(0, min(self.state.get("selected_index", 0) + delta, len(rows) - 1))
+        self.state["selected_index"] = move_selected_index(self.state.get("selected_index", 0), delta, rows)
         self._sync_selection(context)
 
     def handle_action(self, action: str, payload: dict, context: WidgetContext) -> bool:
@@ -214,7 +213,8 @@ class TableWidget(Widget):
             for column, width in zip(self.columns, widths):
                 parts.append(self._format_cell(column.get("title", ""), width, column.get("align", "left")))
             header = " ".join(parts)[: rect.width]
-            buffer.write_text(rect.x, y, header, header_style.fg_color, header_style.bg_color)
+            buffer.fill_row(rect.x, y, rect.width, header_style.fg_color, header_style.bg_color, style=header_style)
+            buffer.write_text(rect.x, y, header, header_style.fg_color, header_style.bg_color, style=header_style)
             y += 1
 
         rows = self.state.get("rows", [])
@@ -234,5 +234,6 @@ class TableWidget(Widget):
                 align = column.get("align", "left")
                 parts.append(self._format_cell(row.get(key, ""), width, align))
             row_style = selected_style if self.selectable and (start_index + row_offset) == self.state.get("selected_index", 0) else base_style
-            buffer.write_text(rect.x, y, " ".join(parts)[: rect.width], row_style.fg_color, row_style.bg_color)
+            buffer.fill_row(rect.x, y, rect.width, row_style.fg_color, row_style.bg_color, style=row_style)
+            buffer.write_text(rect.x, y, " ".join(parts)[: rect.width], row_style.fg_color, row_style.bg_color, style=row_style)
             y += 1

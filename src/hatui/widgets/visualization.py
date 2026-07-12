@@ -76,6 +76,20 @@ def quantize(value: float, minimum: float, maximum: float, levels: str) -> str:
     return levels[index]
 
 
+def glyph(context, name: str, default: str) -> str:
+    policy = getattr(context, "render_policy", None)
+    if policy is None:
+        return default
+    return policy.char(name, default)
+
+
+def glyph_levels(context, name: str, default: str) -> str:
+    policy = getattr(context, "render_policy", None)
+    if policy is None:
+        return default
+    return policy.levels(name, default)
+
+
 def trim_text(text: Any, width: int) -> str:
     return str(text)[: max(width, 0)]
 

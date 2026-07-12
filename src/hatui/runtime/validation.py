@@ -301,6 +301,24 @@ class SpecValidator:
                     else:
                         child_key = "child" if "child" in modal else "screen" if "screen" in modal else "modal"
                         self._validate_widget_spec(child, f"{modal_path}.{child_key}", messages)
+        if widget_type == "table":
+            columns = spec.get("columns")
+            if not isinstance(columns, list):
+                messages.append(ValidationMessage(f"{path}.columns", "expected a list"))
+            else:
+                for index, column in enumerate(columns):
+                    column_path = f"{path}.columns[{index}]"
+                    if not isinstance(column, dict):
+                        messages.append(ValidationMessage(column_path, "expected an object"))
+                        continue
+                    if "key" in column and not isinstance(column["key"], str):
+                        messages.append(ValidationMessage(f"{column_path}.key", "expected a string"))
+                    if "title" in column and not isinstance(column["title"], str):
+                        messages.append(ValidationMessage(f"{column_path}.title", "expected a string"))
+                    if "align" in column and column["align"] not in {"left", "center", "right"}:
+                        messages.append(ValidationMessage(f"{column_path}.align", "expected 'left', 'center', or 'right'"))
+                    if "width" in column and not isinstance(column["width"], int):
+                        messages.append(ValidationMessage(f"{column_path}.width", "expected an int"))
 
     def _signature_schema(self, registration: WidgetRegistration) -> tuple[dict[str, Any], set[str]]:
         widget_cls = registration.widget_cls

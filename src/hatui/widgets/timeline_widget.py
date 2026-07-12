@@ -3,7 +3,7 @@ from __future__ import annotations
 from hatui.core.style import Style, resolve_color_token, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
-from hatui.widgets.visualization import trim_text
+from hatui.widgets.visualization import glyph, trim_text
 
 
 class TimelineWidget(Widget):
@@ -57,6 +57,8 @@ class TimelineWidget(Widget):
             fallback=Style(context.theme.text.fg_color, context.theme.text.bg_color),
         )
         visible = events[-rect.height :]
+        point_char = glyph(context, "point", "*")
+        vertical_char = glyph(context, "vertical", "|")
         for row_index, event in enumerate(visible):
             level = event.get("level", "info") if isinstance(event, dict) else "info"
             marker_color = resolve_color_token(
@@ -67,12 +69,13 @@ class TimelineWidget(Widget):
             timestamp = event.get("timestamp", "--:--:--") if isinstance(event, dict) else "--:--:--"
             label = event.get("label") or event.get("text") or str(event)
             prefix = f"{timestamp} " if self.show_time else ""
-            line = f"{prefix}● {label}"
+            line = f"{prefix}{point_char} {label}"
             y = rect.y + row_index
             if row_index < len(visible) - 1 and rect.x + len(prefix) < rect.x + rect.width:
-                buffer.write(rect.x + len(prefix), y, "●", marker_color, base_style.bg_color)
+                buffer.write(rect.x + len(prefix), y, point_char, marker_color, base_style.bg_color)
                 if y + 1 < rect.y + rect.height:
-                    buffer.write(rect.x + len(prefix), y + 1, "│", marker_color, base_style.bg_color)
-            buffer.write_text(rect.x, y, trim_text(line, rect.width), base_style.fg_color, base_style.bg_color)
+                    buffer.write(rect.x + len(prefix), y + 1, vertical_char, marker_color, base_style.bg_color)
+            buffer.fill_row(rect.x, y, rect.width, base_style.fg_color, base_style.bg_color, style=base_style)
+            buffer.write_text(rect.x, y, trim_text(line, rect.width), base_style.fg_color, base_style.bg_color, style=base_style)
             if rect.x + len(prefix) < rect.x + rect.width:
-                buffer.write(rect.x + len(prefix), y, "●", marker_color, base_style.bg_color)
+                buffer.write(rect.x + len(prefix), y, point_char, marker_color, base_style.bg_color)

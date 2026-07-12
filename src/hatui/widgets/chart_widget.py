@@ -3,7 +3,7 @@ from __future__ import annotations
 from hatui.core.style import Style, resolve_color_token, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
-from hatui.widgets.visualization import coerce_float, coerce_float_list, fit_values, trim_text, value_bounds, value_to_row
+from hatui.widgets.visualization import coerce_float, coerce_float_list, fit_values, glyph, trim_text, value_bounds, value_to_row
 
 
 class ChartWidget(Widget):
@@ -154,8 +154,13 @@ class ChartWidget(Widget):
         minimum, maximum = value_bounds(fitted, self.min_value, self.max_value)
 
         baseline_row = rect.y + chart_height - 1
+        horizontal_char = glyph(context, "horizontal", "-")
+        fill_char = glyph(context, "fill", "#")
+        point_char = glyph(context, "point", "*")
+        diag_down = glyph(context, "diag_down", "\\")
+        diag_up = glyph(context, "diag_up", "/")
         for x in range(rect.width):
-            buffer.write(rect.x + x, baseline_row, "─", axis_color, base_style.bg_color)
+            buffer.write(rect.x + x, baseline_row, horizontal_char, axis_color, base_style.bg_color)
 
         for series_index, values in enumerate(fitted):
             config = series[series_index]
@@ -167,17 +172,17 @@ class ChartWidget(Widget):
                 x = rect.x + index
                 if self.mode == "area":
                     for fill_y in range(row, rect.y + chart_height):
-                        buffer.write(x, fill_y, "█", series_fill, base_style.bg_color)
+                        buffer.write(x, fill_y, fill_char, series_fill, base_style.bg_color)
                 else:
-                    buffer.write(x, row, "●", color, base_style.bg_color)
+                    buffer.write(x, row, point_char, color, base_style.bg_color)
 
                 if previous_row is not None and self.mode == "line":
                     step = 1 if row > previous_row else -1
                     if row == previous_row:
-                        buffer.write(x - 1, row, "─", color, base_style.bg_color)
+                        buffer.write(x - 1, row, horizontal_char, color, base_style.bg_color)
                     else:
                         for y in range(previous_row, row + step, step):
-                            char = "╲" if row > previous_row else "╱"
+                            char = diag_down if row > previous_row else diag_up
                             buffer.write(x - 1, y, char, color, base_style.bg_color)
                 previous_row = row
 
@@ -194,6 +199,7 @@ class ChartWidget(Widget):
         maximum = self.max_value if self.max_value is not None else max((item["value"] for item in bars), default=1.0)
         maximum = maximum if maximum > 0 else 1.0
         slot_width = max(rect.width // max(len(bars), 1), 1)
+        fill_char = glyph(context, "fill", "#")
 
         for index, bar in enumerate(bars[: rect.width]):
             x = rect.x + index * slot_width
@@ -203,8 +209,9 @@ class ChartWidget(Widget):
             for column in range(width):
                 for offset in range(chart_height):
                     y = rect.y + chart_height - 1 - offset
-                    char = "█" if offset < height else " "
-                    buffer.write(x + column, y, char, color if char == "█" else axis_color, base_style.bg_color)
+                    active = offset < height
+                    char = fill_char if active else " "
+                    buffer.write(x + column, y, char, color if active else axis_color, base_style.bg_color)
             if footer_rows and x < rect.x + rect.width:
                 buffer.write_text(
                     x,

@@ -3,6 +3,7 @@ from __future__ import annotations
 from hatui.core.style import Style, resolve_color_token, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
+from hatui.widgets.selection import StoreSelectionBinding, move_selected_index, read_selected_index, sync_selection
 from hatui.widgets.visualization import trim_text
 
 
@@ -78,24 +79,21 @@ class StatusMatrixWidget(Widget):
         ]
 
     def _read_selected_index(self, context: WidgetContext) -> int:
-        if self.selected_index_key is None:
-            return self.state.get("selected_index", self.selected_index)
-        value = resolve_path(context.data, self.selected_index_key, self.state.get("selected_index", self.selected_index))
-        try:
-            return max(int(value), 0)
-        except (TypeError, ValueError):
-            return self.state.get("selected_index", self.selected_index)
+        return read_selected_index(context, self.selected_index_key, self.state.get("selected_index", self.selected_index))
 
     def _sync_selection(self, context: WidgetContext):
         items = self.state.get("items", [])
-        if not items:
-            self.state["selected_index"] = 0
-            return
-        self.state["selected_index"] = max(0, min(self.state.get("selected_index", 0), len(items) - 1))
-        if self.selected_index_key is not None:
-            self.root.perform_action("store_set", {"path": self.selected_index_key, "value": self.state["selected_index"]}, context)
+        bindings: list[StoreSelectionBinding] = []
         if self.selected_item_key is not None:
-            self.root.perform_action("store_set", {"path": self.selected_item_key, "value": self.selected_item()}, context)
+            bindings.append(StoreSelectionBinding(self.selected_item_key, self.selected_item))
+        self.state["selected_index"] = sync_selection(
+            self,
+            context,
+            items,
+            self.state.get("selected_index", 0),
+            index_key=self.selected_index_key,
+            bindings=bindings,
+        )
 
     def selected_item(self):
         items = self.state.get("items", [])
@@ -127,9 +125,7 @@ class StatusMatrixWidget(Widget):
 
     def _move_selection(self, delta: int, context: WidgetContext):
         items = self.state.get("items", [])
-        if not items:
-            return
-        self.state["selected_index"] = max(0, min(self.state.get("selected_index", 0) + delta, len(items) - 1))
+        self.state["selected_index"] = move_selected_index(self.state.get("selected_index", 0), delta, items)
         self._sync_selection(context)
 
     def handle_action(self, action: str, payload: dict, context: WidgetContext) -> bool:
@@ -236,4 +232,3 @@ class StatusMatrixWidget(Widget):
             buffer.write_text(x, y, self._line_text(item, width), fg, bg)
             if cell_height > 1 and y + 1 < rect.y + rect.height:
                 buffer.write_text(x, y + 1, self._line_text(item, width, detail=True), fg, bg)
-

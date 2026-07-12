@@ -5,7 +5,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from hatui.runtime.bootstrap import build_runtime
-from hatui.runtime.cli import build_parser, normalize_argv, resolve_spec_context, write_cli_text
+from hatui.runtime.cli import build_parser, normalize_argv, preferred_glyph_mode, resolve_spec_context, write_cli_text
 from hatui.runtime.defaults import create_provider_registry, create_widget_registry
 from hatui.runtime.engine import AppEngine
 from hatui.runtime.loader import ScreenSpecLoader
@@ -21,9 +21,11 @@ class HatuiApp:
         provider_registry=None,
         watch: bool = False,
         bundled_demo: bool = False,
+        glyph_mode: str = "unicode",
     ):
         self.spec_path = Path(spec_path)
         self.is_bundled_demo = bundled_demo
+        self.glyph_mode = glyph_mode
         self.widget_registry = widget_registry or create_widget_registry()
         self.provider_registry = provider_registry or create_provider_registry()
         self.loader = ScreenSpecLoader(self.widget_registry, self.provider_registry)
@@ -59,6 +61,7 @@ class HatuiApp:
             preserved_stack=preserved_stack,
             preserved_focus=preserved_focus,
             preserved_focus_map=preserved_focus_map,
+            glyph_mode=self.glyph_mode,
         )
         self.store = runtime.store
         self.router = runtime.router
@@ -179,6 +182,7 @@ def main():
             spec_path=spec_path,
             watch=bool(getattr(args, "watch", False)),
             bundled_demo=is_bundled_demo,
+            glyph_mode=preferred_glyph_mode(),
         )
         if command == "preview":
             preview_text = app.preview(

@@ -1,6 +1,7 @@
 from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
+from hatui.widgets.visualization import glyph
 
 
 class ScrollWidget(Widget):
@@ -192,7 +193,7 @@ class ScrollWidget(Widget):
         )
 
         for offset in range(viewport_height):
-            buffer.write(bar_x, rect.y + offset, "│", base_style.fg_color, base_style.bg_color)
+            buffer.write(bar_x, rect.y + offset, glyph(context, "scroll_track", "|"), base_style.fg_color, base_style.bg_color)
 
         if content_height <= viewport_height:
             thumb_start = 0
@@ -211,7 +212,7 @@ class ScrollWidget(Widget):
         )
         for offset in range(thumb_height):
             y = rect.y + min(thumb_start + offset, viewport_height - 1)
-            buffer.write(bar_x, y, "█", thumb_style.fg_color, thumb_style.bg_color)
+            buffer.write(bar_x, y, glyph(context, "scroll_thumb", "#"), thumb_style.fg_color, thumb_style.bg_color)
 
     def paint(self, buffer, context: WidgetContext):
         rect = self.properties["rect"]

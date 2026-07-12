@@ -19,6 +19,7 @@ class Context:
     focused_widget: str | None = None
     last_key: str | None = None
     last_modifiers: list[str] = field(default_factory=list)
+    render_policy: Any = None
 
 
 @dataclass

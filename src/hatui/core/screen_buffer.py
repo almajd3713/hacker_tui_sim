@@ -13,6 +13,9 @@ class Cell:
     char: str = ' '
     style: Style = field(default_factory=Style)
 
+
+DEFAULT_STYLE = Style()
+
 class ScreenBuffer:
     """
     A class to represent the 2D screen buffer
@@ -22,6 +25,7 @@ class ScreenBuffer:
         self.height = height
         self.buffer = [[Cell() for _ in range(width)] for _ in range(height)]
         self._clip_stack: list[tuple[int, int, int, int]] = []
+        self._style_cache: dict[tuple[str, str], Style] = {("default", "default"): DEFAULT_STYLE}
 
     def resize(self, width: int, height: int):
         """
@@ -38,7 +42,9 @@ class ScreenBuffer:
         """
         for y in range(self.height):
             for x in range(self.width):
-                self.buffer[y][x] = Cell()
+                cell = self.buffer[y][x]
+                cell.char = " "
+                cell.style = DEFAULT_STYLE
 
     def _normalized_clip(self, x: int, y: int, width: int, height: int) -> tuple[int, int, int, int]:
         left = max(x, 0)
@@ -81,19 +87,43 @@ class ScreenBuffer:
         left, top, right, bottom = self._clip_stack[-1]
         return left <= x < right and top <= y < bottom
     
-    def write(self, x: int, y: int, char: str, fg_color: str = 'default', bg_color: str = 'default'):
+    def _resolve_style(self, fg_color: str, bg_color: str) -> Style:
+        key = (fg_color, bg_color)
+        cached = self._style_cache.get(key)
+        if cached is None:
+            cached = Style(fg_color=fg_color, bg_color=bg_color)
+            self._style_cache[key] = cached
+        return cached
+
+    def write(self, x: int, y: int, char: str, fg_color: str = 'default', bg_color: str = 'default', *, style: Style | None = None):
         """
         Write a character to the screen buffer at the specified coordinates.
         """
         if 0 <= x < self.width and 0 <= y < self.height and self._within_clip(x, y):
-            self.buffer[y][x] = Cell(char, Style(fg_color=fg_color, bg_color=bg_color))
+            cell = self.buffer[y][x]
+            cell.char = char
+            cell.style = style or self._resolve_style(fg_color, bg_color)
 
-    def write_text(self, x: int, y: int, text: str, fg_color: str = 'default', bg_color: str = 'default'):
+    def write_text(self, x: int, y: int, text: str, fg_color: str = 'default', bg_color: str = 'default', *, style: Style | None = None):
         """
         Write a string of text to the screen buffer starting at the specified coordinates.
         """
+        resolved_style = style or self._resolve_style(fg_color, bg_color)
         for i, char in enumerate(text):
-            self.write(x + i, y, char, fg_color, bg_color)
+            self.write(x + i, y, char, fg_color, bg_color, style=resolved_style)
+
+    def write_text_clipped(self, x: int, y: int, text: str, width: int, fg_color: str = "default", bg_color: str = "default", *, style: Style | None = None):
+        self.write_text(x, y, str(text)[: max(width, 0)], fg_color, bg_color, style=style)
+
+    def fill_rect(self, x: int, y: int, width: int, height: int, char: str = " ", fg_color: str = "default", bg_color: str = "default", *, style: Style | None = None):
+        resolved_style = style or self._resolve_style(fg_color, bg_color)
+        fill = char[:1] if char else " "
+        line = fill * max(width, 0)
+        for row in range(max(height, 0)):
+            self.write_text(x, y + row, line, fg_color, bg_color, style=resolved_style)
+
+    def fill_row(self, x: int, y: int, width: int, fg_color: str = "default", bg_color: str = "default", *, style: Style | None = None):
+        self.fill_rect(x, y, width, 1, " ", fg_color, bg_color, style=style)
 
     def flush(self):
         """

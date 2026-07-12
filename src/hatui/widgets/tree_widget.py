@@ -5,6 +5,8 @@ from copy import deepcopy
 from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
+from hatui.widgets.selection import StoreSelectionBinding, move_selected_index, read_selected_index, sync_selection
+from hatui.widgets.visualization import glyph
 
 
 class TreeWidget(Widget):
@@ -117,13 +119,7 @@ class TreeWidget(Widget):
         super().update(delta_time, context)
 
     def _read_selected_index(self, context: WidgetContext) -> int:
-        if self.selected_index_key is None:
-            return self.state.get("selected_index", self.selected_index)
-        value = resolve_path(context.data, self.selected_index_key, self.state.get("selected_index", self.selected_index))
-        try:
-            return max(int(value), 0)
-        except (TypeError, ValueError):
-            return self.state.get("selected_index", self.selected_index)
+        return read_selected_index(context, self.selected_index_key, self.state.get("selected_index", self.selected_index))
 
     def _ensure_auto_expand(self) -> None:
         if not self.auto_expand_root:
@@ -179,22 +175,22 @@ class TreeWidget(Widget):
 
     def _sync_selection(self, context: WidgetContext):
         rows = self.state.get("visible_items", [])
-        if not rows:
-            self.state["selected_index"] = 0
-            return
-        self.state["selected_index"] = max(0, min(self.state.get("selected_index", 0), len(rows) - 1))
-        if self.selected_index_key is not None:
-            self.root.perform_action(
-                "store_set",
-                {"path": self.selected_index_key, "value": self.state["selected_index"]},
-                context,
-            )
+        bindings: list[StoreSelectionBinding] = []
         if self.selected_item_key is not None:
-            self.root.perform_action(
-                "store_set",
-                {"path": self.selected_item_key, "value": deepcopy(rows[self.state["selected_index"]]["item"])},
-                context,
+            bindings.append(
+                StoreSelectionBinding(
+                    self.selected_item_key,
+                    lambda: deepcopy(self.state.get("visible_items", [])[self.state.get("selected_index", 0)]["item"]),
+                )
             )
+        self.state["selected_index"] = sync_selection(
+            self,
+            context,
+            rows,
+            self.state.get("selected_index", 0),
+            index_key=self.selected_index_key,
+            bindings=bindings,
+        )
 
     def allocate(self, width: int, height: int):
         rect = self.properties["rect"]
@@ -210,9 +206,7 @@ class TreeWidget(Widget):
 
     def _move_selection(self, delta: int, context: WidgetContext):
         rows = self.state.get("visible_items", [])
-        if not rows:
-            return
-        self.state["selected_index"] = max(0, min(self.state.get("selected_index", 0) + delta, len(rows) - 1))
+        self.state["selected_index"] = move_selected_index(self.state.get("selected_index", 0), delta, rows)
         self._sync_selection(context)
 
     def _selected_row(self) -> dict | None:
@@ -333,12 +327,15 @@ class TreeWidget(Widget):
             style = selected_style if active else base_style
             item = row["item"]
             text = self._display_text(item)
-            branch = self.leaf_symbol
+            branch = glyph(context, "bullet", "*") if self.leaf_symbol == "•" else self.leaf_symbol
             if row["has_children"]:
-                branch = self.expanded_symbol if row["expanded"] else self.collapsed_symbol
+                branch = (
+                    glyph(context, "expanded", "v") if self.expanded_symbol == "▾" else self.expanded_symbol
+                ) if row["expanded"] else (
+                    glyph(context, "collapsed", ">") if self.collapsed_symbol == "▸" else self.collapsed_symbol
+                )
             prefix = (" " * (row["depth"] * self.indent)) + branch + " "
             line = f"{prefix}{text}"[: rect.width]
-            fill = " " * rect.width
             y = rect.y + row_index
-            buffer.write_text(rect.x, y, fill, style.fg_color, style.bg_color)
-            buffer.write_text(rect.x, y, line, style.fg_color, style.bg_color)
+            buffer.fill_row(rect.x, y, rect.width, style.fg_color, style.bg_color, style=style)
+            buffer.write_text(rect.x, y, line, style.fg_color, style.bg_color, style=style)

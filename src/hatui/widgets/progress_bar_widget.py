@@ -1,6 +1,7 @@
 from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
+from hatui.widgets.visualization import glyph
 
 
 class ProgressBarWidget(Widget):
@@ -89,6 +90,7 @@ class ProgressBarWidget(Widget):
         ratio = self.state["value"]
         line_y = rect.y
         if rect.height > 1 and self.label:
+            buffer.fill_row(rect.x, rect.y, rect.width, base_style.fg_color, base_style.bg_color, style=base_style)
             label = self.label[: rect.width]
             if self.show_percentage:
                 percent = f"{int(ratio * 100):3d}%"
@@ -107,14 +109,16 @@ class ProgressBarWidget(Widget):
             line_y += 1
 
         fill_width = min(int(round(rect.width * ratio)), rect.width)
-        bar = self.fill_char * fill_width + self.empty_char * max(rect.width - fill_width, 0)
+        fill_char = self.fill_char if self.fill_char != "█" else glyph(context, "fill", "#")
+        empty_char = self.empty_char if self.empty_char != "░" else glyph(context, "empty_block", ".")
+        buffer.fill_row(rect.x, line_y, rect.width, base_style.fg_color, base_style.bg_color, style=base_style)
         if fill_width > 0:
-            buffer.write_text(rect.x, line_y, self.fill_char * fill_width, fill_style.fg_color, fill_style.bg_color)
+            buffer.write_text(rect.x, line_y, fill_char * fill_width, fill_style.fg_color, fill_style.bg_color)
         if fill_width < rect.width:
             buffer.write_text(
                 rect.x + fill_width,
                 line_y,
-                self.empty_char * (rect.width - fill_width),
+                empty_char * (rect.width - fill_width),
                 base_style.fg_color,
                 base_style.bg_color,
             )

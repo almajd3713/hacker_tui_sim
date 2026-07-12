@@ -3,7 +3,7 @@ from __future__ import annotations
 from hatui.core.style import Style, resolve_color_token, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
-from hatui.widgets.visualization import coerce_float, trim_text
+from hatui.widgets.visualization import coerce_float, glyph, trim_text
 
 
 class HistogramWidget(Widget):
@@ -72,6 +72,7 @@ class HistogramWidget(Widget):
             context.theme,
             context.theme.color("accent"),
         )
+        fill_char = glyph(context, "fill", "#")
         max_value = max(coerce_float(bucket.get("value", bucket.get("count", 0.0))) for bucket in buckets if isinstance(bucket, dict))
         max_value = max(max_value, 1.0)
         label_width = min(self.label_width, max(rect.width - 1, 0))
@@ -81,15 +82,15 @@ class HistogramWidget(Widget):
             value = coerce_float(bucket.get("value", bucket.get("count", 0.0)))
             label = trim_text(bucket.get("label", ""), label_width).ljust(label_width)
             y = rect.y + row_index
-            buffer.write_text(rect.x, y, label, base_style.fg_color, base_style.bg_color)
+            buffer.fill_row(rect.x, y, rect.width, base_style.fg_color, base_style.bg_color, style=base_style)
+            buffer.write_text(rect.x, y, label, base_style.fg_color, base_style.bg_color, style=base_style)
             available = max(rect.width - label_width - 1, 0)
             fill_width = int(round((value / max_value) * available)) if available > 0 else 0
             color = resolve_color_token(bucket.get("fg_color"), context.theme, fill_color)
             for index in range(available):
-                char = "█" if index < fill_width else " "
-                buffer.write(rect.x + label_width + 1 + index, y, char, color if char == "█" else base_style.fg_color, base_style.bg_color)
+                char = fill_char if index < fill_width else " "
+                buffer.write(rect.x + label_width + 1 + index, y, char, color if index < fill_width else base_style.fg_color, base_style.bg_color)
             if self.show_value and available > 0:
                 value_text = trim_text(bucket.get("display", bucket.get("count", value)), available)
                 start = rect.x + label_width + 1 + max(available - len(value_text), 0)
                 buffer.write_text(start, y, value_text, base_style.fg_color, base_style.bg_color)
-

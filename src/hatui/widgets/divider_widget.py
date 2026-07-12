@@ -1,5 +1,6 @@
 from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
+from hatui.widgets.visualization import glyph
 
 
 class DividerWidget(Widget):
@@ -55,7 +56,7 @@ class DividerWidget(Widget):
                 bg_color=context.theme.border.bg_color,
             ),
         )
-        char = self.char or ("─" if self.orientation == "horizontal" else "│")
+        char = self.char or glyph(context, "horizontal" if self.orientation == "horizontal" else "vertical", "-" if self.orientation == "horizontal" else "|")
 
         if self.orientation == "horizontal":
             buffer.write_text(rect.x, rect.y, char * rect.width, style.fg_color, style.bg_color)

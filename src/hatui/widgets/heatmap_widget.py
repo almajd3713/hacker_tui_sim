@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from hatui.core.style import Style, resolve_color_token, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
-from hatui.widgets.visualization import SHADE_LEVELS, coerce_float, coerce_float_list, value_bounds
+from hatui.widgets.visualization import SHADE_LEVELS, coerce_float, coerce_float_list, glyph_levels, value_bounds
 
 
 class HeatmapWidget(Widget):
@@ -123,6 +123,7 @@ class HeatmapWidget(Widget):
         if cell_char is None:
             cell_char = context.theme.widget_slot("heatmap", "cell_char", None)
         cell_char = " " if cell_char is None else str(cell_char)[:1]
+        levels = glyph_levels(context, "shade", self.levels or SHADE_LEVELS)
         visible_rows = matrix[-rect.height :]
         normalized_rows = []
         for row in visible_rows:
@@ -143,7 +144,7 @@ class HeatmapWidget(Widget):
                     ratio = max(0.0, min(1.0, ratio))
                 level_index = min(len(self.levels) - 1, int(round(ratio * (len(self.levels) - 1))))
                 ramp_index = min(len(fg_ramp) - 1, int(round(ratio * (len(fg_ramp) - 1))))
-                char = cell_char if bg_ramp else (cell_char if cell_char.strip() else self.levels[level_index])
+                char = cell_char if bg_ramp else (cell_char if cell_char.strip() else levels[level_index])
                 fg_color = fg_ramp[ramp_index] if fg_ramp else style.fg_color
                 bg_color = style.bg_color
                 if bg_ramp:

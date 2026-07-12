@@ -3,7 +3,7 @@ from __future__ import annotations
 from hatui.core.style import Style, resolve_color_token, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
-from hatui.widgets.visualization import trim_text
+from hatui.widgets.visualization import glyph, trim_text
 
 
 class SignalStripWidget(Widget):
@@ -55,6 +55,7 @@ class SignalStripWidget(Widget):
             bg_color=self.bg_color,
             fallback=Style(context.theme.text.fg_color, context.theme.text.bg_color),
         )
+        buffer.fill_row(rect.x, rect.y, rect.width, base_style.fg_color, base_style.bg_color, style=base_style)
         cursor_x = rect.x
         for item_index, item in enumerate(self.state.get("items", [])):
             if cursor_x >= rect.x + rect.width:
@@ -71,8 +72,8 @@ class SignalStripWidget(Widget):
                 context.theme,
                 base_style.fg_color,
             )
-            marker = str(item.get("marker", "■"))[:1]
+            raw_marker = str(item.get("marker", "■"))[:1]
+            marker = glyph(context, "fill", "#") if raw_marker == "■" else raw_marker
             text = trim_text(f"{marker}{item.get('label', '')}", rect.x + rect.width - cursor_x)
             buffer.write_text(cursor_x, rect.y, text, signal_color, base_style.bg_color)
             cursor_x += len(text)
-

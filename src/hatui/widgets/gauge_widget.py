@@ -3,7 +3,7 @@ from __future__ import annotations
 from hatui.core.style import Style, resolve_color_token, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
-from hatui.widgets.visualization import coerce_float, trim_text
+from hatui.widgets.visualization import coerce_float, glyph, trim_text
 
 
 class GaugeWidget(Widget):
@@ -94,12 +94,16 @@ class GaugeWidget(Widget):
             header = self.label
             if self.show_value:
                 header = f"{self.label} {normalized * 100:5.1f}%".strip()
+            buffer.fill_row(rect.x, rect.y, rect.width, base_style.fg_color, base_style.bg_color, style=base_style)
             buffer.write_text(rect.x, rect.y, trim_text(header, rect.width), base_style.fg_color, base_style.bg_color)
 
         bar_y = rect.y + rect.height - 1
         filled = int(round(normalized * rect.width))
+        fill_char = glyph(context, "fill", "#")
+        empty_char = glyph(context, "empty_block", ".")
+        buffer.fill_row(rect.x, bar_y, rect.width, base_style.fg_color, base_style.bg_color, style=base_style)
         for index in range(rect.width):
             if index < filled:
-                buffer.write(rect.x + index, bar_y, "█", fill_color, base_style.bg_color)
+                buffer.write(rect.x + index, bar_y, fill_char, fill_color, base_style.bg_color)
             else:
-                buffer.write(rect.x + index, bar_y, "░", empty_color, base_style.bg_color)
+                buffer.write(rect.x + index, bar_y, empty_char, empty_color, base_style.bg_color)

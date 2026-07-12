@@ -7,6 +7,7 @@ from typing import Any
 
 from hatui.runtime.loader import ScreenSpecLoader
 from hatui.runtime.provider_manager import ProviderManager
+from hatui.runtime.render_policy import RenderPolicy
 from hatui.runtime.router import Router
 from hatui.runtime.store import Store
 from hatui.widgets.root_widget import RootWidget
@@ -43,6 +44,7 @@ def build_runtime(
     preserved_stack: list[str] | None = None,
     preserved_focus: str | None = None,
     preserved_focus_map: dict[str, str] | None = None,
+    glyph_mode: str = "unicode",
 ) -> BootstrapResult:
     spec = loader.load_spec(spec_path)
     theme = loader.load_theme(spec)
@@ -71,6 +73,7 @@ def build_runtime(
         theme=theme,
         store=store,
         router=router,
+        render_policy=RenderPolicy(glyph_mode=glyph_mode),
     )
     if preserved_focus_map:
         root_widget.state["last_focused_by_route"] = dict(preserved_focus_map)

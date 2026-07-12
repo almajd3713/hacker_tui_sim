@@ -5,33 +5,6 @@ from hatui.core.style import BorderTheme, resolve_color_token, resolve_font_toke
 class BorderWidget(Widget):
     """Draw a border around a single child with configurable inner padding."""
 
-    BORDER_STYLES = {
-        "ascii": {
-            "top_left": "+",
-            "top_right": "+",
-            "bottom_left": "+",
-            "bottom_right": "+",
-            "horizontal": "-",
-            "vertical": "|",
-        },
-        "sharp": {
-            "top_left": "┌",
-            "top_right": "┐",
-            "bottom_left": "└",
-            "bottom_right": "┘",
-            "horizontal": "─",
-            "vertical": "│",
-        },
-        "rounded": {
-            "top_left": "╭",
-            "top_right": "╮",
-            "bottom_left": "╰",
-            "bottom_right": "╯",
-            "horizontal": "─",
-            "vertical": "│",
-        },
-    }
-
     def __init__(
         self,
         name: str,
@@ -62,7 +35,7 @@ class BorderWidget(Widget):
 
     def _resolved_theme(self, context: WidgetContext) -> BorderTheme:
         fallback = context.theme.border
-        style = self.style if self.style in self.BORDER_STYLES else fallback.style
+        style = self.style if self.style in {"ascii", "sharp", "rounded"} else fallback.style
         fg_color = resolve_color_token(self.fg_color, context.theme, fallback.fg_color) if self.fg_color is not None else fallback.fg_color
         bg_color = resolve_color_token(self.bg_color, context.theme, fallback.bg_color) if self.bg_color is not None else fallback.bg_color
         if self.is_focused(context):
@@ -97,7 +70,7 @@ class BorderWidget(Widget):
             return
 
         theme = self._resolved_theme(context)
-        border = self.BORDER_STYLES[theme.style]
+        border = context.render_policy.border(theme.style)
         left = rect.x
         right = rect.x + rect.width - 1
         top = rect.y

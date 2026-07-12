@@ -1,6 +1,7 @@
 from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
+from hatui.widgets.visualization import glyph
 
 
 class MiniChartWidget(Widget):
@@ -72,6 +73,7 @@ class MiniChartWidget(Widget):
 
         for index, normalized in enumerate(normalized_values):
             column_height = max(1, int(round(normalized * rect.height)))
+            fill_char = self.fill_char if self.fill_char != "█" else glyph(context, "fill", "#")
             for y in range(rect.height):
-                char = self.fill_char if rect.height - y <= column_height else " "
+                char = fill_char if rect.height - y <= column_height else " "
                 buffer.write(rect.x + index, rect.y + y, char, style.fg_color, style.bg_color)

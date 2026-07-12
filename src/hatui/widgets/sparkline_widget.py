@@ -1,12 +1,11 @@
 from hatui.core.style import Style, themed_style
 from hatui.core.widget import Widget, WidgetContext
 from hatui.runtime.bindings import resolve_path
+from hatui.widgets.visualization import glyph_levels
 
 
 class SparklineWidget(Widget):
     """Single-line sparkline chart from a numeric series."""
-
-    GLYPHS = "▁▂▃▄▅▆▇█"
 
     def __init__(
         self,
@@ -46,23 +45,24 @@ class SparklineWidget(Widget):
     def layout_children(self, x: int, y: int, context: WidgetContext):
         pass
 
-    def _sparkline(self, width: int) -> str:
+    def _sparkline(self, width: int, context: WidgetContext) -> str:
         values = self.state.get("values", [])[-width:]
         if width <= 0:
             return ""
         if not values:
             return " " * width
+        glyphs = glyph_levels(context, "spark", "▁▂▃▄▅▆▇█")
 
         minimum = min(values)
         maximum = max(values)
         if minimum == maximum:
-            return self.GLYPHS[0] * len(values)
+            return glyphs[0] * len(values)
 
         chars = []
         for value in values:
             normalized = (value - minimum) / (maximum - minimum)
-            index = min(int(normalized * (len(self.GLYPHS) - 1)), len(self.GLYPHS) - 1)
-            chars.append(self.GLYPHS[index])
+            index = min(int(normalized * (len(glyphs) - 1)), len(glyphs) - 1)
+            chars.append(glyphs[index])
         return "".join(chars).rjust(width)
 
     def paint(self, buffer, context: WidgetContext):
@@ -80,4 +80,5 @@ class SparklineWidget(Widget):
                 bg_color=context.theme.text.bg_color,
             ),
         )
-        buffer.write_text(rect.x, rect.y, self._sparkline(rect.width), style.fg_color, style.bg_color)
+        buffer.fill_row(rect.x, rect.y, rect.width, style.fg_color, style.bg_color, style=style)
+        buffer.write_text(rect.x, rect.y, self._sparkline(rect.width, context), style.fg_color, style.bg_color, style=style)
