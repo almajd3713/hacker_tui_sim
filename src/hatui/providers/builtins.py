@@ -269,6 +269,135 @@ class ThresholdProvider(Provider):
             matched = actual > compare
         return self.spec.get("true") if matched else self.spec.get("false")
 
+
+class NormalizeStateProvider(Provider):
+    def provide(self, delta_time: float, context):
+        source = resolve_value_spec(
+            {"source": self.spec.get("source"), "default": self.spec.get("default", [])},
+            context.data,
+        )
+        state_key = self.spec.get("state_key", "state")
+        severity_key = self.spec.get("severity_key", "severity")
+        state_map = dict(self.spec.get("state_map", {}) or {})
+        severity_map = dict(self.spec.get("severity_map", {}) or {})
+        severity_by_state = dict(self.spec.get("severity_by_state", {}) or {})
+        default_state = self.spec.get("default_state", "unknown")
+        default_severity = self.spec.get("default_severity", "info")
+        if isinstance(source, list):
+            return [
+                self._normalize_item(
+                    item,
+                    state_key=state_key,
+                    severity_key=severity_key,
+                    state_map=state_map,
+                    severity_map=severity_map,
+                    severity_by_state=severity_by_state,
+                    default_state=default_state,
+                    default_severity=default_severity,
+                )
+                for item in source
+            ]
+        if isinstance(source, dict):
+            return self._normalize_item(
+                source,
+                state_key=state_key,
+                severity_key=severity_key,
+                state_map=state_map,
+                severity_map=severity_map,
+                severity_by_state=severity_by_state,
+                default_state=default_state,
+                default_severity=default_severity,
+            )
+        return source
+
+    def _normalize_item(
+        self,
+        item,
+        *,
+        state_key: str,
+        severity_key: str,
+        state_map: dict,
+        severity_map: dict,
+        severity_by_state: dict,
+        default_state: str,
+        default_severity: str,
+    ):
+        if not isinstance(item, dict):
+            return item
+        normalized = dict(item)
+        raw_state = str(item.get(state_key, default_state)).lower()
+        raw_severity = str(item.get(severity_key, "")).lower()
+        state = state_map.get(raw_state, raw_state or default_state)
+        severity = severity_map.get(raw_severity, raw_severity) if raw_severity else severity_by_state.get(state, default_severity)
+        if not severity:
+            severity = severity_by_state.get(state, default_severity)
+        normalized[state_key] = state
+        normalized[severity_key] = severity
+        return normalized
+
+
+class BucketProvider(Provider):
+    def provide(self, delta_time: float, context):
+        source = resolve_value_spec(
+            {"source": self.spec.get("source"), "default": self.spec.get("default", [])},
+            context.data,
+        )
+        values = self._values(source)
+        if not values:
+            return []
+        bucket_count = max(int(self.spec.get("bucket_count", 8)), 1)
+        minimum = float(self.spec.get("min", min(values)))
+        maximum = float(self.spec.get("max", max(values)))
+        if maximum <= minimum:
+            maximum = minimum + 1.0
+        width = (maximum - minimum) / bucket_count
+        counts = [0 for _ in range(bucket_count)]
+        for value in values:
+            if value <= minimum:
+                index = 0
+            elif value >= maximum:
+                index = bucket_count - 1
+            else:
+                index = min(bucket_count - 1, int((value - minimum) / width))
+            counts[index] += 1
+        result = []
+        precision = int(self.spec.get("precision", 2))
+        for index, count in enumerate(counts):
+            start = minimum + index * width
+            end = start + width
+            result.append(
+                {
+                    "label": f"{start:.{precision}f}-{end:.{precision}f}",
+                    "count": count,
+                    "value": count,
+                    "start": round(start, precision),
+                    "end": round(end, precision),
+                    "display": str(count),
+                }
+            )
+        return result
+
+    def _values(self, source) -> list[float]:
+        if isinstance(source, list):
+            result = []
+            value_path = self.spec.get("value_key")
+            for item in source:
+                if isinstance(item, dict) and value_path:
+                    try:
+                        result.append(float(item.get(value_path, 0.0)))
+                    except (TypeError, ValueError):
+                        continue
+                else:
+                    try:
+                        result.append(float(item))
+                    except (TypeError, ValueError):
+                        continue
+            return result
+        try:
+            return [float(source)]
+        except (TypeError, ValueError):
+            return []
+
 class EventStreamProvider(Provider):
     def setup(self, context):
         self.events: list[dict] = []

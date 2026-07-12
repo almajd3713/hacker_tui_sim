@@ -1,6 +1,7 @@
 """Library of widgets for Hatui."""
 
 from hatui.widgets.alert_widget import AlertWidget
+from hatui.widgets.alert_stack_widget import AlertStackWidget
 from hatui.widgets.banner_widget import BannerWidget
 from hatui.widgets.box_widget import BoxWidget
 from hatui.widgets.border_widget import BorderWidget
@@ -14,8 +15,10 @@ from hatui.widgets.event_feed_widget import EventFeedWidget
 from hatui.widgets.flow_widget import FlowWidget
 from hatui.widgets.gauge_widget import GaugeWidget
 from hatui.widgets.heatmap_widget import HeatmapWidget
+from hatui.widgets.histogram_widget import HistogramWidget
 from hatui.widgets.hex_dump_widget import HexDumpWidget
 from hatui.widgets.inspector_widget import InspectorWidget
+from hatui.widgets.kv_inspector_widget import KVInspectorWidget
 from hatui.widgets.label_widget import LabelWidget
 from hatui.widgets.log_widget import LogWidget
 from hatui.widgets.menu_widget import MenuWidget
@@ -29,8 +32,10 @@ from hatui.widgets.root_widget import RootWidget
 from hatui.widgets.row_widget import RowWidget
 from hatui.widgets.scroll_widget import ScrollWidget
 from hatui.widgets.sparkline_widget import SparklineWidget
+from hatui.widgets.status_matrix_widget import StatusMatrixWidget
 from hatui.widgets.status_strip_widget import StatusStripWidget
 from hatui.widgets.stat_widget import StatWidget
+from hatui.widgets.signal_strip_widget import SignalStripWidget
 from hatui.widgets.table_widget import TableWidget
 from hatui.widgets.tabs_widget import TabsWidget
 from hatui.widgets.text_widget import TextWidget
@@ -39,6 +44,7 @@ from hatui.widgets.list_widget import ListWidget
 
 __all__ = [
     "AlertWidget",
+    "AlertStackWidget",
     "BannerWidget",
     "BoxWidget",
     "BorderWidget",
@@ -52,8 +58,10 @@ __all__ = [
     "FlowWidget",
     "GaugeWidget",
     "HeatmapWidget",
+    "HistogramWidget",
     "HexDumpWidget",
     "InspectorWidget",
+    "KVInspectorWidget",
     "LabelWidget",
     "ListWidget",
     "LogWidget",
@@ -68,8 +76,10 @@ __all__ = [
     "RowWidget",
     "ScrollWidget",
     "SparklineWidget",
+    "StatusMatrixWidget",
     "StatusStripWidget",
     "StatWidget",
+    "SignalStripWidget",
     "TableWidget",
     "TabsWidget",
     "TextWidget",

@@ -15,9 +15,11 @@ from hatui.providers import (
     GridHistoryProvider,
     HostInfoProvider,
     HttpJsonProvider,
+    NormalizeStateProvider,
     RandomProvider,
     RecordsProvider,
     RollingWindowProvider,
+    BucketProvider,
     SystemStatsProvider,
     TemplateProvider,
     ThresholdProvider,
@@ -27,6 +29,7 @@ from hatui.providers import (
 from hatui.runtime.registries import ProviderRegistry, WidgetRegistry
 from hatui.widgets import (
     AlertWidget,
+    AlertStackWidget,
     BannerWidget,
     BorderWidget,
     BoxWidget,
@@ -40,8 +43,10 @@ from hatui.widgets import (
     FlowWidget,
     GaugeWidget,
     HeatmapWidget,
+    HistogramWidget,
     HexDumpWidget,
     InspectorWidget,
+    KVInspectorWidget,
     LabelWidget,
     ListWidget,
     LogWidget,
@@ -55,8 +60,10 @@ from hatui.widgets import (
     RowWidget,
     ScrollWidget,
     SparklineWidget,
+    StatusMatrixWidget,
     StatusStripWidget,
     StatWidget,
+    SignalStripWidget,
     TableWidget,
     TabsWidget,
     TextWidget,
@@ -153,10 +160,15 @@ def create_widget_registry() -> WidgetRegistry:
     registry.register("banner", lambda spec, loader: _build_plain(spec, loader, BannerWidget))
     registry.register("alert", lambda spec, loader: _build_plain(spec, loader, AlertWidget))
     registry.register("status_strip", lambda spec, loader: _build_plain(spec, loader, StatusStripWidget))
+    registry.register("signal_strip", lambda spec, loader: _build_plain(spec, loader, SignalStripWidget))
+    registry.register("status_matrix", lambda spec, loader: _build_plain(spec, loader, StatusMatrixWidget))
+    registry.register("alert_stack", lambda spec, loader: _build_plain(spec, loader, AlertStackWidget))
+    registry.register("kv_inspector", lambda spec, loader: _build_plain(spec, loader, KVInspectorWidget))
 
     registry.register("stat", lambda spec, loader: _build_plain(spec, loader, StatWidget))
     registry.register("progress_bar", lambda spec, loader: _build_plain(spec, loader, ProgressBarWidget))
     registry.register("sparkline", lambda spec, loader: _build_plain(spec, loader, SparklineWidget))
+    registry.register("histogram", lambda spec, loader: _build_plain(spec, loader, HistogramWidget))
     registry.register("mini_chart", lambda spec, loader: _build_plain(spec, loader, MiniChartWidget))
     registry.register("metric_grid", lambda spec, loader: _build_plain(spec, loader, MetricGridWidget))
     registry.register("line_chart", lambda spec, loader: _build_plain({**spec, "mode": "line"}, loader, ChartWidget))
@@ -200,4 +212,6 @@ def create_provider_registry() -> ProviderRegistry:
     registry.register("threshold", ThresholdProvider)
     registry.register("event_stream", EventStreamProvider)
     registry.register("grid_history", GridHistoryProvider)
+    registry.register("normalize_state", NormalizeStateProvider)
+    registry.register("bucket", BucketProvider)
     return registry
